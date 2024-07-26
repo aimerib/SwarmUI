@@ -803,11 +803,7 @@ class GenPageBrowserClass {
             let file = files[i];
             id++;
             let desc = this.describe(file);
-            if (
-                !isLikelyMobile() &&
-                this.filter &&
-                !desc.searchable.toLowerCase().includes(this.filter)
-            ) {
+            if (this.filter && !desc.searchable.toLowerCase().includes(this.filter)) {
                 continue;
             }
             if (i > maxBuildNow) {
@@ -878,8 +874,9 @@ class GenPageBrowserClass {
                 textBlock.tabIndex = 0;
                 textBlock.innerHTML = desc.description;
                 div.appendChild(textBlock);
-            } else if (this.format.includes("Thumbnails")) {
-                div.className += " image-block"; // image-block-legacy
+            }
+            else if (this.format.includes('Thumbnails')) {
+                div.className += ' image-block'; // image-block-legacy
                 let factor = 8;
                 if (this.format.startsWith("Big")) {
                     factor = 15;
@@ -961,8 +958,7 @@ class GenPageBrowserClass {
     makeVisible(elem) {
         for (let subElem of elem.querySelectorAll(".lazyload")) {
             let top = subElem.getBoundingClientRect().top;
-            if (top >= window.innerHeight + 512 || top == 0) {
-                // Note top=0 means not visible
+            if (!isLikelyMobile() && (top >= window.innerHeight + 512 || top == 0)) { // Note top=0 means not visible
                 continue;
             }
             subElem.classList.remove("lazyload");
@@ -1066,24 +1062,13 @@ class GenPageBrowserClass {
             : 0;
         if (!this.hasGenerated) {
             this.hasGenerated = true;
-            this.container.innerHTML = "";
-            this.folderTreeDiv = createDiv(
-                `${this.id}-foldertree`,
-                "browser-folder-tree-container"
-            );
-            this.folderTreeDiv.classList.add("navbarToggler");
-            let folderTreeSplitter = createDiv(
-                `${this.id}-splitter`,
-                "browser-folder-tree-splitter splitter-bar"
-            );
-            this.headerBar = createDiv(
-                `${this.id}-header`,
-                "browser-header-bar"
-            );
-            this.fullContentDiv = createDiv(
-                `${this.id}-fullcontent`,
-                "browser-fullcontent-container"
-            );
+            this.container.innerHTML = '';
+            this.folderTreeDiv = createDiv(`${this.id}-foldertree`, 'browser-folder-tree-container');
+            this.folderTreeDiv.classList.add('navbarToggler');
+            this.folderTreeDiv.classList.add('collapse');
+            let folderTreeSplitter = createDiv(`${this.id}-splitter`, 'browser-folder-tree-splitter splitter-bar');
+            this.headerBar = createDiv(`${this.id}-header`, 'browser-header-bar');
+            this.fullContentDiv = createDiv(`${this.id}-fullcontent`, 'browser-fullcontent-container');
             this.container.appendChild(this.folderTreeDiv);
             if (!isLikelyMobile()) {
                 this.container.appendChild(folderTreeSplitter);

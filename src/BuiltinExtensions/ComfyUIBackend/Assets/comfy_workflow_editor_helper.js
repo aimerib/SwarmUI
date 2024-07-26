@@ -475,6 +475,11 @@ function comfyBuildParams(callback) {
                         subtype = 'Stable-Diffusion';
                         defaultVal = defaultVal.replaceAll('\\', '/').replaceAll('.safetensors', '');
                         break;
+                    case 'SwarmInputLoras':
+                        type = 'model';
+                        subtype = "LoRA";
+                        values = node.inputs['values']
+                        break;
                     case 'SwarmInputDropdown':
                         type = 'dropdown';
                         values = node.inputs['values'].split(',').map(s => s.trim());

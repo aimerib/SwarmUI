@@ -164,6 +164,10 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
             swarmui:
                 base_path: {root}
                 checkpoints: {Program.ServerSettings.Paths.SDModelFolder}
+                ella: |
+                    ella
+                ella_encoder: |
+                    ella_encoder
                 vae: |
                     {Program.ServerSettings.Paths.SDVAEFolder}
                     VAE

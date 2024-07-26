@@ -25,3 +25,6 @@ custom-launch-docker.sh
 __pycache__/
 venv/
 *.pth
+
+# Mac stuff
+.DS_store

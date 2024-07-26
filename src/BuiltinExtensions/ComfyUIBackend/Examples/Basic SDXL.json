@@ -1,0 +1,2131 @@
+{
+  "workflow": {
+    "last_node_id": 40,
+    "last_link_id": 45,
+    "nodes": [
+      {
+        "id": 11,
+        "type": "SwarmInputText",
+        "pos": [
+          29,
+          -273
+        ],
+        "size": {
+          "0": 400,
+          "1": 246
+        },
+        "flags": {},
+        "order": 4,
+        "mode": 0,
+        "inputs": [
+          {
+            "name": "group",
+            "type": "GROUP",
+            "link": 19
+          }
+        ],
+        "outputs": [
+          {
+            "name": "STRING",
+            "type": "STRING",
+            "links": [
+              11
+            ],
+            "shape": 3,
+            "slot_index": 0
+          }
+        ],
+        "properties": {
+          "Node name for S&R": "SwarmInputText"
+        },
+        "widgets_values": [
+          "Prompt",
+          "",
+          "prompt",
+          "",
+          0,
+          false,
+          "prompt"
+        ]
+      },
+      {
+        "id": 6,
+        "type": "CLIPTextEncode",
+        "pos": [
+          513,
+          60
+        ],
+        "size": {
+          "0": 422.84503173828125,
+          "1": 164.31304931640625
+        },
+        "flags": {},
+        "order": 13,
+        "mode": 0,
+        "inputs": [
+          {
+            "name": "clip",
+            "type": "CLIP",
+            "link": 15
+          },
+          {
+            "name": "text",
+            "type": "STRING",
+            "link": 11,
+            "widget": {
+              "name": "text"
+            }
+          }
+        ],
+        "outputs": [
+          {
+            "name": "CONDITIONING",
+            "type": "CONDITIONING",
+            "links": [
+              26
+            ],
+            "slot_index": 0
+          }
+        ],
+        "properties": {
+          "Node name for S&R": "CLIPTextEncode"
+        },
+        "widgets_values": [
+          "a photo of a cat"
+        ]
+      },
+      {
+        "id": 20,
+        "type": "CLIPTextEncode",
+        "pos": [
+          522,
+          348
+        ],
+        "size": {
+          "0": 422.84503173828125,
+          "1": 164.31304931640625
+        },
+        "flags": {},
+        "order": 14,
+        "mode": 0,
+        "inputs": [
+          {
+            "name": "clip",
+            "type": "CLIP",
+            "link": 22
+          },
+          {
+            "name": "text",
+            "type": "STRING",
+            "link": 23,
+            "widget": {
+              "name": "text"
+            }
+          }
+        ],
+        "outputs": [
+          {
+            "name": "CONDITIONING",
+            "type": "CONDITIONING",
+            "links": [
+              27
+            ],
+            "slot_index": 0
+          }
+        ],
+        "properties": {
+          "Node name for S&R": "CLIPTextEncode"
+        },
+        "widgets_values": [
+          "a photo of a cat"
+        ]
+      },
+      {
+        "id": 19,
+        "type": "SwarmInputText",
+        "pos": [
+          -29,
+          476
+        ],
+        "size": {
+          "0": 400,
+          "1": 246
+        },
+        "flags": {},
+        "order": 5,
+        "mode": 0,
+        "inputs": [
+          {
+            "name": "group",
+            "type": "GROUP",
+            "link": 21
+          }
+        ],
+        "outputs": [
+          {
+            "name": "STRING",
+            "type": "STRING",
+            "links": [
+              23
+            ],
+            "shape": 3,
+            "slot_index": 0
+          }
+        ],
+        "properties": {
+          "Node name for S&R": "SwarmInputText"
+        },
+        "widgets_values": [
+          "Negative Prompt",
+          "",
+          "prompt",
+          "",
+          0.5,
+          false,
+          "negativeprompt"
+        ]
+      },
+      {
+        "id": 10,
+        "type": "PreviewImage",
+        "pos": [
+          1664,
+          64
+        ],
+        "size": {
+          "0": 320,
+          "1": 256
+        },
+        "flags": {},
+        "order": 17,
+        "mode": 0,
+        "inputs": [
+          {
+            "name": "images",
+            "type": "IMAGE",
+            "link": 29
+          }
+        ],
+        "properties": {
+          "Node name for S&R": "PreviewImage"
+        }
+      },
+      {
+        "id": 8,
+        "type": "VAEDecode",
+        "pos": [
+          1408,
+          128
+        ],
+        "size": {
+          "0": 210,
+          "1": 46
+        },
+        "flags": {},
+        "order": 16,
+        "mode": 0,
+        "inputs": [
+          {
+            "name": "samples",
+            "type": "LATENT",
+            "link": 30
+          },
+          {
+            "name": "vae",
+            "type": "VAE",
+            "link": 18
+          }
+        ],
+        "outputs": [
+          {
+            "name": "IMAGE",
+            "type": "IMAGE",
+            "links": [
+              29
+            ],
+            "slot_index": 0
+          }
+        ],
+        "properties": {
+          "Node name for S&R": "VAEDecode"
+        }
+      },
+      {
+        "id": 18,
+        "type": "SwarmInputGroup",
+        "pos": [
+          -924,
+          -236
+        ],
+        "size": {
+          "0": 400,
+          "1": 200
+        },
+        "flags": {},
+        "order": 0,
+        "mode": 0,
+        "outputs": [
+          {
+            "name": "GROUP",
+            "type": "GROUP",
+            "links": [
+              19,
+              21
+            ],
+            "shape": 3,
+            "slot_index": 0
+          }
+        ],
+        "properties": {
+          "Node name for S&R": "SwarmInputGroup"
+        },
+        "widgets_values": [
+          "Prompt",
+          true,
+          "",
+          0,
+          false,
+          false
+        ]
+      },
+      {
+        "id": 27,
+        "type": "SwarmInputGroup",
+        "pos": [
+          -920,
+          38
+        ],
+        "size": {
+          "0": 400,
+          "1": 200
+        },
+        "flags": {},
+        "order": 1,
+        "mode": 0,
+        "outputs": [
+          {
+            "name": "GROUP",
+            "type": "GROUP",
+            "links": [
+              33,
+              34,
+              36,
+              44
+            ],
+            "shape": 3,
+            "slot_index": 0
+          }
+        ],
+        "properties": {
+          "Node name for S&R": "SwarmInputGroup"
+        },
+        "widgets_values": [
+          "Basic settings",
+          false,
+          "",
+          0.5,
+          false,
+          true
+        ]
+      },
+      {
+        "id": 26,
+        "type": "SwarmInputInteger",
+        "pos": [
+          520,
+          -909
+        ],
+        "size": {
+          "0": 400,
+          "1": 316
+        },
+        "flags": {},
+        "order": 7,
+        "mode": 0,
+        "inputs": [
+          {
+            "name": "group",
+            "type": "GROUP",
+            "link": 34
+          }
+        ],
+        "outputs": [
+          {
+            "name": "INT",
+            "type": "INT",
+            "links": [
+              31
+            ],
+            "shape": 3,
+            "slot_index": 0
+          }
+        ],
+        "properties": {
+          "Node name for S&R": "SwarmInputInteger"
+        },
+        "widgets_values": [
+          "Seed",
+          -1,
+          1,
+          0,
+          100,
+          100,
+          "seed",
+          "",
+          0,
+          false,
+          ""
+        ]
+      },
+      {
+        "id": 28,
+        "type": "SwarmInputInteger",
+        "pos": [
+          511,
+          -517
+        ],
+        "size": {
+          "0": 400,
+          "1": 316
+        },
+        "flags": {
+          "collapsed": false
+        },
+        "order": 8,
+        "mode": 0,
+        "inputs": [
+          {
+            "name": "group",
+            "type": "GROUP",
+            "link": 36,
+            "slot_index": 0
+          }
+        ],
+        "outputs": [
+          {
+            "name": "INT",
+            "type": "INT",
+            "links": [
+              35
+            ],
+            "shape": 3,
+            "slot_index": 0
+          }
+        ],
+        "properties": {
+          "Node name for S&R": "SwarmInputInteger"
+        },
+        "widgets_values": [
+          "Steps",
+          20,
+          1,
+          1,
+          100,
+          100,
+          "slider",
+          "",
+          0,
+          false,
+          ""
+        ]
+      },
+      {
+        "id": 31,
+        "type": "SwarmInputFloat",
+        "pos": [
+          534,
+          580
+        ],
+        "size": {
+          "0": 400,
+          "1": 316
+        },
+        "flags": {},
+        "order": 10,
+        "mode": 0,
+        "inputs": [
+          {
+            "name": "group",
+            "type": "GROUP",
+            "link": 37,
+            "slot_index": 0
+          }
+        ],
+        "outputs": [
+          {
+            "name": "FLOAT",
+            "type": "FLOAT",
+            "links": [
+              38
+            ],
+            "shape": 3,
+            "slot_index": 0
+          }
+        ],
+        "properties": {
+          "Node name for S&R": "SwarmInputFloat"
+        },
+        "widgets_values": [
+          "Cfg",
+          7,
+          0.5,
+          0,
+          100,
+          100,
+          "slider",
+          "",
+          0,
+          false,
+          ""
+        ]
+      },
+      {
+        "id": 23,
+        "type": "SwarmKSampler",
+        "pos": [
+          1050,
+          -459
+        ],
+        "size": {
+          "0": 315,
+          "1": 526
+        },
+        "flags": {},
+        "order": 15,
+        "mode": 0,
+        "inputs": [
+          {
+            "name": "model",
+            "type": "MODEL",
+            "link": 25
+          },
+          {
+            "name": "positive",
+            "type": "CONDITIONING",
+            "link": 26
+          },
+          {
+            "name": "negative",
+            "type": "CONDITIONING",
+            "link": 27
+          },
+          {
+            "name": "latent_image",
+            "type": "LATENT",
+            "link": 28
+          },
+          {
+            "name": "noise_seed",
+            "type": "INT",
+            "link": 31,
+            "widget": {
+              "name": "noise_seed"
+            }
+          },
+          {
+            "name": "steps",
+            "type": "INT",
+            "link": 35,
+            "widget": {
+              "name": "steps"
+            }
+          },
+          {
+            "name": "cfg",
+            "type": "FLOAT",
+            "link": 38,
+            "widget": {
+              "name": "cfg"
+            },
+            "slot_index": 6
+          },
+          {
+            "name": "sampler_name",
+            "type": "COMBO",
+            "link": 40,
+            "widget": {
+              "name": "sampler_name"
+            },
+            "slot_index": 7
+          },
+          {
+            "name": "scheduler",
+            "type": "COMBO",
+            "link": 42,
+            "widget": {
+              "name": "scheduler"
+            }
+          }
+        ],
+        "outputs": [
+          {
+            "name": "LATENT",
+            "type": "LATENT",
+            "links": [
+              30
+            ],
+            "shape": 3,
+            "slot_index": 0
+          }
+        ],
+        "properties": {
+          "Node name for S&R": "SwarmKSampler"
+        },
+        "widgets_values": [
+          0,
+          "randomize",
+          20,
+          8,
+          "euler",
+          "turbo",
+          0,
+          10000,
+          0,
+          0,
+          -1,
+          -1,
+          7,
+          "enable",
+          "disable",
+          "default",
+          false,
+          1024
+        ]
+      },
+      {
+        "id": 35,
+        "type": "SwarmInputDropdown",
+        "pos": [
+          992,
+          247
+        ],
+        "size": {
+          "0": 400,
+          "1": 266
+        },
+        "flags": {},
+        "order": 11,
+        "mode": 0,
+        "inputs": [
+          {
+            "name": "group",
+            "type": "GROUP",
+            "link": 41,
+            "slot_index": 0
+          }
+        ],
+        "outputs": [
+          {
+            "name": "STRING",
+            "type": "STRING",
+            "links": null,
+            "shape": 3,
+            "slot_index": 0
+          },
+          {
+            "name": "",
+            "type": "",
+            "links": [
+              40
+            ],
+            "shape": 3,
+            "slot_index": 1
+          }
+        ],
+        "properties": {
+          "Node name for S&R": "SwarmInputDropdown"
+        },
+        "widgets_values": [
+          "Sampler",
+          "",
+          "euler, euler_cfg_pp, euler_ancestral, euler_ancestral_cfg_pp, heun, heunpp2, dpm_2, dpm_2_ancestral, lms, dpm_fast, dpm_adaptive, dpmpp_2s_ancestral, dpmpp_sde, dpmpp_sde_gpu, dpmpp_2m, dpmpp_2m_sde, dpmpp_2m_sde_gpu, dpmpp_3m_sde, dpmpp_3m_sde_gpu, ddpm, lcm, ipndm, ipndm_v, deis, ddim, uni_pc, uni_pc_bh2",
+          "",
+          0,
+          false,
+          ""
+        ]
+      },
+      {
+        "id": 37,
+        "type": "SwarmInputDropdown",
+        "pos": [
+          982,
+          586
+        ],
+        "size": {
+          "0": 400,
+          "1": 266
+        },
+        "flags": {},
+        "order": 12,
+        "mode": 0,
+        "inputs": [
+          {
+            "name": "group",
+            "type": "GROUP",
+            "link": 43,
+            "slot_index": 0
+          }
+        ],
+        "outputs": [
+          {
+            "name": "STRING",
+            "type": "STRING",
+            "links": null,
+            "shape": 3,
+            "slot_index": 0
+          },
+          {
+            "name": "",
+            "type": "",
+            "links": [
+              42
+            ],
+            "shape": 3,
+            "slot_index": 1
+          }
+        ],
+        "properties": {
+          "Node name for S&R": "SwarmInputDropdown"
+        },
+        "widgets_values": [
+          "Scheduler",
+          "",
+          "normal, karras, exponential, sgm_uniform, simple, ddim_uniform, pcm",
+          "",
+          0,
+          false,
+          ""
+        ]
+      },
+      {
+        "id": 29,
+        "type": "SwarmInputGroup",
+        "pos": [
+          -923,
+          304
+        ],
+        "size": {
+          "0": 400,
+          "1": 200
+        },
+        "flags": {},
+        "order": 2,
+        "mode": 0,
+        "outputs": [
+          {
+            "name": "GROUP",
+            "type": "GROUP",
+            "links": [
+              37,
+              41,
+              43
+            ],
+            "shape": 3,
+            "slot_index": 0
+          }
+        ],
+        "properties": {
+          "Node name for S&R": "SwarmInputGroup"
+        },
+        "widgets_values": [
+          "Advanced settings",
+          false,
+          "",
+          1,
+          false,
+          true
+        ]
+      },
+      {
+        "id": 17,
+        "type": "SwarmInputCheckpoint",
+        "pos": [
+          -384,
+          36
+        ],
+        "size": {
+          "0": 400,
+          "1": 236
+        },
+        "flags": {},
+        "order": 6,
+        "mode": 0,
+        "inputs": [
+          {
+            "name": "group",
+            "type": "GROUP",
+            "link": 33,
+            "slot_index": 0
+          }
+        ],
+        "outputs": [
+          {
+            "name": "MODEL",
+            "type": "MODEL",
+            "links": [
+              25
+            ],
+            "shape": 3,
+            "slot_index": 0
+          },
+          {
+            "name": "CLIP",
+            "type": "CLIP",
+            "links": [
+              15,
+              22
+            ],
+            "shape": 3,
+            "slot_index": 1
+          },
+          {
+            "name": "VAE",
+            "type": "VAE",
+            "links": [
+              18
+            ],
+            "shape": 3,
+            "slot_index": 2
+          }
+        ],
+        "properties": {
+          "Node name for S&R": "SwarmInputCheckpoint"
+        },
+        "widgets_values": [
+          "SDXL Checkpoint Model",
+          "XL/bemypony_Real2.safetensors",
+          "",
+          0,
+          false,
+          ""
+        ]
+      },
+      {
+        "id": 40,
+        "type": "SwarmInputModelName",
+        "pos": [
+          -921,
+          586
+        ],
+        "size": {
+          "0": 400,
+          "1": 219.99998474121094
+        },
+        "flags": {},
+        "order": 9,
+        "mode": 0,
+        "inputs": [
+          {
+            "name": "group",
+            "type": "GROUP",
+            "link": 44,
+            "slot_index": 0
+          }
+        ],
+        "outputs": [
+          {
+            "name": "",
+            "type": "",
+            "links": [],
+            "shape": 3,
+            "slot_index": 0
+          }
+        ],
+        "properties": {
+          "Node name for S&R": "SwarmInputModelName"
+        },
+        "widgets_values": [
+          "Lora to load",
+          "",
+          "LoRA",
+          "",
+          2,
+          false,
+          ""
+        ]
+      },
+      {
+        "id": 5,
+        "type": "EmptyLatentImage",
+        "pos": [
+          83,
+          255
+        ],
+        "size": {
+          "0": 315,
+          "1": 106
+        },
+        "flags": {
+          "collapsed": false
+        },
+        "order": 3,
+        "mode": 0,
+        "outputs": [
+          {
+            "name": "LATENT",
+            "type": "LATENT",
+            "links": [
+              28
+            ],
+            "slot_index": 0
+          }
+        ],
+        "properties": {
+          "Node name for S&R": "EmptyLatentImage"
+        },
+        "widgets_values": [
+          1024,
+          1024,
+          1
+        ]
+      }
+    ],
+    "links": [
+      [
+        11,
+        11,
+        0,
+        6,
+        1,
+        "STRING"
+      ],
+      [
+        15,
+        17,
+        1,
+        6,
+        0,
+        "CLIP"
+      ],
+      [
+        18,
+        17,
+        2,
+        8,
+        1,
+        "VAE"
+      ],
+      [
+        19,
+        18,
+        0,
+        11,
+        0,
+        "GROUP"
+      ],
+      [
+        21,
+        18,
+        0,
+        19,
+        0,
+        "GROUP"
+      ],
+      [
+        22,
+        17,
+        1,
+        20,
+        0,
+        "CLIP"
+      ],
+      [
+        23,
+        19,
+        0,
+        20,
+        1,
+        "STRING"
+      ],
+      [
+        25,
+        17,
+        0,
+        23,
+        0,
+        "MODEL"
+      ],
+      [
+        26,
+        6,
+        0,
+        23,
+        1,
+        "CONDITIONING"
+      ],
+      [
+        27,
+        20,
+        0,
+        23,
+        2,
+        "CONDITIONING"
+      ],
+      [
+        28,
+        5,
+        0,
+        23,
+        3,
+        "LATENT"
+      ],
+      [
+        29,
+        8,
+        0,
+        10,
+        0,
+        "IMAGE"
+      ],
+      [
+        30,
+        23,
+        0,
+        8,
+        0,
+        "LATENT"
+      ],
+      [
+        31,
+        26,
+        0,
+        23,
+        4,
+        "INT"
+      ],
+      [
+        33,
+        27,
+        0,
+        17,
+        0,
+        "GROUP"
+      ],
+      [
+        34,
+        27,
+        0,
+        26,
+        0,
+        "GROUP"
+      ],
+      [
+        35,
+        28,
+        0,
+        23,
+        5,
+        "INT"
+      ],
+      [
+        36,
+        27,
+        0,
+        28,
+        0,
+        "GROUP"
+      ],
+      [
+        37,
+        29,
+        0,
+        31,
+        0,
+        "GROUP"
+      ],
+      [
+        38,
+        31,
+        0,
+        23,
+        6,
+        "FLOAT"
+      ],
+      [
+        40,
+        35,
+        1,
+        23,
+        7,
+        "COMBO"
+      ],
+      [
+        41,
+        29,
+        0,
+        35,
+        0,
+        "GROUP"
+      ],
+      [
+        42,
+        37,
+        1,
+        23,
+        8,
+        "COMBO"
+      ],
+      [
+        43,
+        29,
+        0,
+        37,
+        0,
+        "GROUP"
+      ],
+      [
+        44,
+        27,
+        0,
+        40,
+        0,
+        "GROUP"
+      ]
+    ],
+    "groups": [],
+    "config": {},
+    "extra": {
+      "ds": {
+        "scale": 1,
+        "offset": [
+          906.2911041493985,
+          292.9261327341512
+        ]
+      }
+    },
+    "version": 0.4
+  },
+  "prompt": {
+    "5": {
+      "inputs": {
+        "width": "%%_COMFYFIXME_${comfyrawworkflowinputintegeremptylatentimagenodewidthf:1024}_ENDFIXME_%%",
+        "height": "%%_COMFYFIXME_${comfyrawworkflowinputintegeremptylatentimagenodeheightf:1024}_ENDFIXME_%%",
+        "batch_size": "%%_COMFYFIXME_${comfyrawworkflowinputintegeremptylatentimagenodebatchsizef:1}_ENDFIXME_%%"
+      },
+      "class_type": "EmptyLatentImage"
+    },
+    "6": {
+      "inputs": {
+        "text": [
+          "11",
+          0
+        ],
+        "clip": [
+          "17",
+          1
+        ]
+      },
+      "class_type": "CLIPTextEncode"
+    },
+    "8": {
+      "inputs": {
+        "samples": [
+          "23",
+          0
+        ],
+        "vae": [
+          "17",
+          2
+        ]
+      },
+      "class_type": "VAEDecode"
+    },
+    "10": {
+      "inputs": {
+        "images": [
+          "8",
+          0
+        ]
+      },
+      "class_type": "SwarmSaveImageWS"
+    },
+    "11": {
+      "inputs": {
+        "title": "Prompt",
+        "value": "${prompt:}",
+        "view_type": "prompt",
+        "description": "",
+        "order_priority": 0,
+        "is_advanced": false,
+        "raw_id": "prompt",
+        "group": [
+          "18",
+          0
+        ]
+      },
+      "class_type": "SwarmInputText"
+    },
+    "17": {
+      "inputs": {
+        "title": "SDXL Checkpoint Model",
+        "value": "${sdxlcheckpointmodel:XL/bemypony_Real2.safetensors}",
+        "description": "",
+        "order_priority": 0,
+        "is_advanced": false,
+        "raw_id": "",
+        "group": [
+          "27",
+          0
+        ]
+      },
+      "class_type": "SwarmInputCheckpoint"
+    },
+    "18": {
+      "inputs": {
+        "title": "Prompt",
+        "open_by_default": true,
+        "description": "",
+        "order_priority": 0,
+        "is_advanced": false,
+        "can_shrink": false
+      },
+      "class_type": "SwarmInputGroup"
+    },
+    "19": {
+      "inputs": {
+        "title": "Negative Prompt",
+        "value": "${negativeprompt:}",
+        "view_type": "prompt",
+        "description": "",
+        "order_priority": 0.5,
+        "is_advanced": false,
+        "raw_id": "negativeprompt",
+        "group": [
+          "18",
+          0
+        ]
+      },
+      "class_type": "SwarmInputText"
+    },
+    "20": {
+      "inputs": {
+        "text": [
+          "19",
+          0
+        ],
+        "clip": [
+          "17",
+          1
+        ]
+      },
+      "class_type": "CLIPTextEncode"
+    },
+    "23": {
+      "inputs": {
+        "noise_seed": [
+          "26",
+          0
+        ],
+        "steps": [
+          "28",
+          0
+        ],
+        "cfg": [
+          "31",
+          0
+        ],
+        "sampler_name": [
+          "35",
+          1
+        ],
+        "scheduler": [
+          "37",
+          1
+        ],
+        "start_at_step": "%%_COMFYFIXME_${comfyrawworkflowinputintegerswarmksamplernodestartatstepx:0}_ENDFIXME_%%",
+        "end_at_step": "%%_COMFYFIXME_${comfyrawworkflowinputintegerswarmksamplernodeendatstepx:10000}_ENDFIXME_%%",
+        "var_seed": "%%_COMFYFIXME_${comfyrawworkflowinputintegerswarmksamplernodevarseedx:0}_ENDFIXME_%%",
+        "var_seed_strength": "%%_COMFYFIXME_${comfyrawworkflowinputdecimalswarmksamplernodevarseedstrengthx:0}_ENDFIXME_%%",
+        "sigma_max": "%%_COMFYFIXME_${comfyrawworkflowinputdecimalswarmksamplernodesigmamaxx:-1}_ENDFIXME_%%",
+        "sigma_min": "%%_COMFYFIXME_${comfyrawworkflowinputdecimalswarmksamplernodesigmaminx:-1}_ENDFIXME_%%",
+        "rho": "%%_COMFYFIXME_${comfyrawworkflowinputdecimalswarmksamplernoderhox:7}_ENDFIXME_%%",
+        "add_noise": "${comfyrawworkflowinputdropdownswarmksamplernodeaddnoisex:enable}",
+        "return_with_leftover_noise": "${comfyrawworkflowinputdropdownswarmksamplernodereturnwithleftovernoisex:disable}",
+        "previews": "${comfyrawworkflowinputdropdownswarmksamplernodepreviewsx:default}",
+        "tile_sample": false,
+        "tile_size": "%%_COMFYFIXME_${comfyrawworkflowinputintegerswarmksamplernodetilesizex:1024}_ENDFIXME_%%",
+        "model": [
+          "17",
+          0
+        ],
+        "positive": [
+          "6",
+          0
+        ],
+        "negative": [
+          "20",
+          0
+        ],
+        "latent_image": [
+          "5",
+          0
+        ]
+      },
+      "class_type": "SwarmKSampler"
+    },
+    "26": {
+      "inputs": {
+        "title": "Seed",
+        "value": "${seed:-1}",
+        "step": 1,
+        "min": 0,
+        "max": 100,
+        "view_max": 100,
+        "view_type": "seed",
+        "description": "",
+        "order_priority": 0,
+        "is_advanced": false,
+        "raw_id": "",
+        "group": [
+          "27",
+          0
+        ]
+      },
+      "class_type": "SwarmInputInteger"
+    },
+    "27": {
+      "inputs": {
+        "title": "Basic settings",
+        "open_by_default": false,
+        "description": "",
+        "order_priority": 0.5,
+        "is_advanced": false,
+        "can_shrink": true
+      },
+      "class_type": "SwarmInputGroup"
+    },
+    "28": {
+      "inputs": {
+        "title": "Steps",
+        "value": "${steps:20}",
+        "step": 1,
+        "min": 1,
+        "max": 100,
+        "view_max": 100,
+        "view_type": "slider",
+        "description": "",
+        "order_priority": 0,
+        "is_advanced": false,
+        "raw_id": "",
+        "group": [
+          "27",
+          0
+        ]
+      },
+      "class_type": "SwarmInputInteger"
+    },
+    "29": {
+      "inputs": {
+        "title": "Advanced settings",
+        "open_by_default": false,
+        "description": "",
+        "order_priority": 1,
+        "is_advanced": false,
+        "can_shrink": true
+      },
+      "class_type": "SwarmInputGroup"
+    },
+    "31": {
+      "inputs": {
+        "title": "Cfg",
+        "value": "${cfg:7}",
+        "step": 0.5,
+        "min": 0,
+        "max": 100,
+        "view_max": 100,
+        "view_type": "slider",
+        "description": "",
+        "order_priority": 0,
+        "is_advanced": false,
+        "raw_id": "",
+        "group": [
+          "29",
+          0
+        ]
+      },
+      "class_type": "SwarmInputFloat"
+    },
+    "35": {
+      "inputs": {
+        "title": "Sampler",
+        "value": "${sampler:}",
+        "values": "euler, euler_cfg_pp, euler_ancestral, euler_ancestral_cfg_pp, heun, heunpp2, dpm_2, dpm_2_ancestral, lms, dpm_fast, dpm_adaptive, dpmpp_2s_ancestral, dpmpp_sde, dpmpp_sde_gpu, dpmpp_2m, dpmpp_2m_sde, dpmpp_2m_sde_gpu, dpmpp_3m_sde, dpmpp_3m_sde_gpu, ddpm, lcm, ipndm, ipndm_v, deis, ddim, uni_pc, uni_pc_bh2",
+        "description": "",
+        "order_priority": 0,
+        "is_advanced": false,
+        "raw_id": "",
+        "group": [
+          "29",
+          0
+        ]
+      },
+      "class_type": "SwarmInputDropdown"
+    },
+    "37": {
+      "inputs": {
+        "title": "Scheduler",
+        "value": "${scheduler:}",
+        "values": "normal, karras, exponential, sgm_uniform, simple, ddim_uniform, pcm",
+        "description": "",
+        "order_priority": 0,
+        "is_advanced": false,
+        "raw_id": "",
+        "group": [
+          "29",
+          0
+        ]
+      },
+      "class_type": "SwarmInputDropdown"
+    },
+    "40": {
+      "inputs": {
+        "title": "Lora to load",
+        "value": "${loratoload:}",
+        "subtype": "LoRA",
+        "description": "",
+        "order_priority": 2,
+        "is_advanced": false,
+        "raw_id": "",
+        "group": [
+          "27",
+          0
+        ]
+      },
+      "class_type": "SwarmInputModelName"
+    }
+  },
+  "custom_params": {
+    "comfyrawworkflowinputintegeremptylatentimagenodebatchsizef": {
+      "name": "batch_size",
+      "default": 1,
+      "id": "comfyrawworkflowinputintegeremptylatentimagenodebatchsizef",
+      "type": "integer",
+      "description": "The batch_size input for EmptyLatentImage (Node 5) (integer)",
+      "values": null,
+      "view_type": "big",
+      "min": 1,
+      "max": 4096,
+      "step": 1,
+      "visible": true,
+      "toggleable": true,
+      "priority": -7,
+      "advanced": false,
+      "feature_flag": null,
+      "do_not_save": false,
+      "revalueGetter": null,
+      "no_popover": true,
+      "group": {
+        "name": "EmptyLatentImage (Node 5)",
+        "id": "emptylatentimage",
+        "open": false,
+        "priority": -7,
+        "advanced": true,
+        "can_shrink": true,
+        "toggles": false
+      }
+    },
+    "comfyrawworkflowinputintegeremptylatentimagenodeheightf": {
+      "name": "height",
+      "default": 1024,
+      "id": "comfyrawworkflowinputintegeremptylatentimagenodeheightf",
+      "type": "integer",
+      "description": "The height input for EmptyLatentImage (Node 5) (integer)",
+      "values": null,
+      "view_type": "pot_slider",
+      "min": 128,
+      "max": 8192,
+      "step": 64,
+      "visible": true,
+      "toggleable": true,
+      "priority": -7,
+      "advanced": false,
+      "feature_flag": null,
+      "do_not_save": false,
+      "revalueGetter": null,
+      "no_popover": true,
+      "group": {
+        "name": "EmptyLatentImage (Node 5)",
+        "id": "emptylatentimage",
+        "open": false,
+        "priority": -7,
+        "advanced": true,
+        "can_shrink": true,
+        "toggles": false
+      }
+    },
+    "comfyrawworkflowinputintegeremptylatentimagenodewidthf": {
+      "name": "width",
+      "default": 1024,
+      "id": "comfyrawworkflowinputintegeremptylatentimagenodewidthf",
+      "type": "integer",
+      "description": "The width input for EmptyLatentImage (Node 5) (integer)",
+      "values": null,
+      "view_type": "pot_slider",
+      "min": 128,
+      "max": 8192,
+      "step": 64,
+      "visible": true,
+      "toggleable": true,
+      "priority": -7,
+      "advanced": false,
+      "feature_flag": null,
+      "do_not_save": false,
+      "revalueGetter": null,
+      "no_popover": true,
+      "group": {
+        "name": "EmptyLatentImage (Node 5)",
+        "id": "emptylatentimage",
+        "open": false,
+        "priority": -7,
+        "advanced": true,
+        "can_shrink": true,
+        "toggles": false
+      }
+    },
+    "comfyrawworkflowinputdecimalswarmksamplernoderhox": {
+      "name": "rho",
+      "default": 7,
+      "id": "comfyrawworkflowinputdecimalswarmksamplernoderhox",
+      "type": "decimal",
+      "description": "The rho input for SwarmKSampler (Node 23) (decimal)",
+      "values": null,
+      "view_type": "slider",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "visible": true,
+      "toggleable": true,
+      "priority": -5,
+      "advanced": false,
+      "feature_flag": null,
+      "do_not_save": false,
+      "revalueGetter": null,
+      "no_popover": true,
+      "group": {
+        "name": "SwarmKSampler (Node 23)",
+        "id": "swarmksampler",
+        "open": false,
+        "priority": -5,
+        "advanced": true,
+        "can_shrink": true,
+        "toggles": false
+      }
+    },
+    "comfyrawworkflowinputdecimalswarmksamplernodesigmamaxx": {
+      "name": "sigma_max",
+      "default": -1,
+      "id": "comfyrawworkflowinputdecimalswarmksamplernodesigmamaxx",
+      "type": "decimal",
+      "description": "The sigma_max input for SwarmKSampler (Node 23) (decimal)",
+      "values": null,
+      "view_type": "slider",
+      "min": -1,
+      "max": 1000,
+      "step": 10.01,
+      "visible": true,
+      "toggleable": true,
+      "priority": -5,
+      "advanced": false,
+      "feature_flag": null,
+      "do_not_save": false,
+      "revalueGetter": null,
+      "no_popover": true,
+      "group": {
+        "name": "SwarmKSampler (Node 23)",
+        "id": "swarmksampler",
+        "open": false,
+        "priority": -5,
+        "advanced": true,
+        "can_shrink": true,
+        "toggles": false
+      }
+    },
+    "comfyrawworkflowinputdecimalswarmksamplernodesigmaminx": {
+      "name": "sigma_min",
+      "default": -1,
+      "id": "comfyrawworkflowinputdecimalswarmksamplernodesigmaminx",
+      "type": "decimal",
+      "description": "The sigma_min input for SwarmKSampler (Node 23) (decimal)",
+      "values": null,
+      "view_type": "slider",
+      "min": -1,
+      "max": 1000,
+      "step": 10.01,
+      "visible": true,
+      "toggleable": true,
+      "priority": -5,
+      "advanced": false,
+      "feature_flag": null,
+      "do_not_save": false,
+      "revalueGetter": null,
+      "no_popover": true,
+      "group": {
+        "name": "SwarmKSampler (Node 23)",
+        "id": "swarmksampler",
+        "open": false,
+        "priority": -5,
+        "advanced": true,
+        "can_shrink": true,
+        "toggles": false
+      }
+    },
+    "comfyrawworkflowinputdecimalswarmksamplernodevarseedstrengthx": {
+      "name": "var_seed_strength",
+      "default": 0,
+      "id": "comfyrawworkflowinputdecimalswarmksamplernodevarseedstrengthx",
+      "type": "decimal",
+      "description": "The var_seed_strength input for SwarmKSampler (Node 23) (decimal)",
+      "values": null,
+      "view_type": "slider",
+      "min": 0,
+      "max": 1,
+      "step": 0.01,
+      "visible": true,
+      "toggleable": true,
+      "priority": -5,
+      "advanced": false,
+      "feature_flag": null,
+      "do_not_save": false,
+      "revalueGetter": null,
+      "no_popover": true,
+      "group": {
+        "name": "SwarmKSampler (Node 23)",
+        "id": "swarmksampler",
+        "open": false,
+        "priority": -5,
+        "advanced": true,
+        "can_shrink": true,
+        "toggles": false
+      }
+    },
+    "comfyrawworkflowinputdropdownswarmksamplernodeaddnoisex": {
+      "name": "add_noise",
+      "default": "enable",
+      "id": "comfyrawworkflowinputdropdownswarmksamplernodeaddnoisex",
+      "type": "dropdown",
+      "description": "The add_noise input for SwarmKSampler (Node 23) (dropdown)",
+      "values": [
+        "enable",
+        "disable"
+      ],
+      "view_type": "normal",
+      "min": -9999999999,
+      "max": 9999999999,
+      "step": 1,
+      "visible": true,
+      "toggleable": true,
+      "priority": -5,
+      "advanced": false,
+      "feature_flag": null,
+      "do_not_save": false,
+      "no_popover": true,
+      "group": {
+        "name": "SwarmKSampler (Node 23)",
+        "id": "swarmksampler",
+        "open": false,
+        "priority": -5,
+        "advanced": true,
+        "can_shrink": true,
+        "toggles": false
+      }
+    },
+    "comfyrawworkflowinputdropdownswarmksamplernodepreviewsx": {
+      "name": "previews",
+      "default": "default",
+      "id": "comfyrawworkflowinputdropdownswarmksamplernodepreviewsx",
+      "type": "dropdown",
+      "description": "The previews input for SwarmKSampler (Node 23) (dropdown)",
+      "values": [
+        "default",
+        "none",
+        "one",
+        "second",
+        "iterate",
+        "animate"
+      ],
+      "view_type": "normal",
+      "min": -9999999999,
+      "max": 9999999999,
+      "step": 1,
+      "visible": true,
+      "toggleable": true,
+      "priority": -5,
+      "advanced": false,
+      "feature_flag": null,
+      "do_not_save": false,
+      "no_popover": true,
+      "group": {
+        "name": "SwarmKSampler (Node 23)",
+        "id": "swarmksampler",
+        "open": false,
+        "priority": -5,
+        "advanced": true,
+        "can_shrink": true,
+        "toggles": false
+      }
+    },
+    "comfyrawworkflowinputdropdownswarmksamplernodereturnwithleftovernoisex": {
+      "name": "return_with_leftover_noise",
+      "default": "disable",
+      "id": "comfyrawworkflowinputdropdownswarmksamplernodereturnwithleftovernoisex",
+      "type": "dropdown",
+      "description": "The return_with_leftover_noise input for SwarmKSampler (Node 23) (dropdown)",
+      "values": [
+        "disable",
+        "enable"
+      ],
+      "view_type": "normal",
+      "min": -9999999999,
+      "max": 9999999999,
+      "step": 1,
+      "visible": true,
+      "toggleable": true,
+      "priority": -5,
+      "advanced": false,
+      "feature_flag": null,
+      "do_not_save": false,
+      "no_popover": true,
+      "group": {
+        "name": "SwarmKSampler (Node 23)",
+        "id": "swarmksampler",
+        "open": false,
+        "priority": -5,
+        "advanced": true,
+        "can_shrink": true,
+        "toggles": false
+      }
+    },
+    "comfyrawworkflowinputintegerswarmksamplernodeendatstepx": {
+      "name": "end_at_step",
+      "default": 10000,
+      "id": "comfyrawworkflowinputintegerswarmksamplernodeendatstepx",
+      "type": "integer",
+      "description": "The end_at_step input for SwarmKSampler (Node 23) (integer)",
+      "values": null,
+      "view_type": "normal",
+      "min": 1,
+      "max": 50,
+      "step": 1,
+      "visible": true,
+      "toggleable": true,
+      "priority": -5,
+      "advanced": false,
+      "feature_flag": null,
+      "do_not_save": false,
+      "revalueGetter": null,
+      "no_popover": true,
+      "group": {
+        "name": "SwarmKSampler (Node 23)",
+        "id": "swarmksampler",
+        "open": false,
+        "priority": -5,
+        "advanced": true,
+        "can_shrink": true,
+        "toggles": false
+      }
+    },
+    "comfyrawworkflowinputintegerswarmksamplernodestartatstepx": {
+      "name": "start_at_step",
+      "default": 0,
+      "id": "comfyrawworkflowinputintegerswarmksamplernodestartatstepx",
+      "type": "integer",
+      "description": "The start_at_step input for SwarmKSampler (Node 23) (integer)",
+      "values": null,
+      "view_type": "normal",
+      "min": 1,
+      "max": 50,
+      "step": 1,
+      "visible": true,
+      "toggleable": true,
+      "priority": -5,
+      "advanced": false,
+      "feature_flag": null,
+      "do_not_save": false,
+      "revalueGetter": null,
+      "no_popover": true,
+      "group": {
+        "name": "SwarmKSampler (Node 23)",
+        "id": "swarmksampler",
+        "open": false,
+        "priority": -5,
+        "advanced": true,
+        "can_shrink": true,
+        "toggles": false
+      }
+    },
+    "comfyrawworkflowinputintegerswarmksamplernodetilesizex": {
+      "name": "tile_size",
+      "default": 1024,
+      "id": "comfyrawworkflowinputintegerswarmksamplernodetilesizex",
+      "type": "integer",
+      "description": "The tile_size input for SwarmKSampler (Node 23) (integer)",
+      "values": null,
+      "view_type": "big",
+      "min": 256,
+      "max": 4096,
+      "step": 1,
+      "visible": true,
+      "toggleable": true,
+      "priority": -5,
+      "advanced": false,
+      "feature_flag": null,
+      "do_not_save": false,
+      "revalueGetter": null,
+      "no_popover": true,
+      "group": {
+        "name": "SwarmKSampler (Node 23)",
+        "id": "swarmksampler",
+        "open": false,
+        "priority": -5,
+        "advanced": true,
+        "can_shrink": true,
+        "toggles": false
+      }
+    },
+    "comfyrawworkflowinputintegerswarmksamplernodevarseedx": {
+      "name": "var_seed",
+      "default": 0,
+      "id": "comfyrawworkflowinputintegerswarmksamplernodevarseedx",
+      "type": "integer",
+      "description": "The var_seed input for SwarmKSampler (Node 23) (integer)",
+      "values": null,
+      "view_type": "big",
+      "min": 0,
+      "max": 18446744073709552000,
+      "step": 1,
+      "visible": true,
+      "toggleable": true,
+      "priority": -5,
+      "advanced": false,
+      "feature_flag": null,
+      "do_not_save": false,
+      "revalueGetter": null,
+      "no_popover": true,
+      "group": {
+        "name": "SwarmKSampler (Node 23)",
+        "id": "swarmksampler",
+        "open": false,
+        "priority": -5,
+        "advanced": true,
+        "can_shrink": true,
+        "toggles": false
+      }
+    },
+    "prompt": {
+      "name": "Prompt",
+      "id": "prompt",
+      "type": "text",
+      "subtype": null,
+      "description": "",
+      "default": "",
+      "values": null,
+      "view_type": "prompt",
+      "min": 0,
+      "max": 0,
+      "view_max": 0,
+      "step": 0,
+      "visible": true,
+      "toggleable": false,
+      "priority": 0,
+      "advanced": false,
+      "feature_flag": null,
+      "do_not_save": false,
+      "revalueGetter": null,
+      "no_popover": true,
+      "group": {
+        "name": "Prompt",
+        "id": "prompt",
+        "open": true,
+        "priority": 0,
+        "advanced": false,
+        "can_shrink": false,
+        "toggles": false
+      }
+    },
+    "negativeprompt": {
+      "name": "Negative Prompt",
+      "id": "negativeprompt",
+      "type": "text",
+      "subtype": null,
+      "description": "",
+      "default": "",
+      "values": null,
+      "view_type": "prompt",
+      "min": 0,
+      "max": 0,
+      "view_max": 0,
+      "step": 0,
+      "visible": true,
+      "toggleable": false,
+      "priority": 0.5,
+      "advanced": false,
+      "feature_flag": null,
+      "do_not_save": false,
+      "revalueGetter": null,
+      "no_popover": true,
+      "group": {
+        "name": "Prompt",
+        "id": "prompt",
+        "open": true,
+        "priority": 0,
+        "advanced": false,
+        "can_shrink": false,
+        "toggles": false
+      }
+    },
+    "sdxlcheckpointmodel": {
+      "name": "SDXL Checkpoint Model",
+      "id": "sdxlcheckpointmodel",
+      "type": "model",
+      "subtype": "Stable-Diffusion",
+      "description": "",
+      "default": "XL/bemypony_Real2",
+      "values": null,
+      "min": 0,
+      "max": 0,
+      "view_max": 0,
+      "step": 0,
+      "visible": true,
+      "toggleable": false,
+      "priority": 0,
+      "advanced": false,
+      "feature_flag": null,
+      "do_not_save": false,
+      "revalueGetter": null,
+      "no_popover": true,
+      "group": {
+        "name": "Basic settings",
+        "id": "basicsettings",
+        "open": false,
+        "priority": 0.5,
+        "advanced": false,
+        "can_shrink": true,
+        "toggles": false
+      }
+    },
+    "seed": {
+      "name": "Seed",
+      "id": "seed",
+      "type": "integer",
+      "subtype": null,
+      "description": "",
+      "default": -1,
+      "values": null,
+      "view_type": "seed",
+      "min": 0,
+      "max": 100,
+      "view_max": 100,
+      "step": 1,
+      "visible": true,
+      "toggleable": false,
+      "priority": 0,
+      "advanced": false,
+      "feature_flag": null,
+      "do_not_save": false,
+      "revalueGetter": null,
+      "no_popover": true,
+      "group": {
+        "name": "Basic settings",
+        "id": "basicsettings",
+        "open": false,
+        "priority": 0.5,
+        "advanced": false,
+        "can_shrink": true,
+        "toggles": false
+      }
+    },
+    "steps": {
+      "name": "Steps",
+      "id": "steps",
+      "type": "integer",
+      "subtype": null,
+      "description": "",
+      "default": 20,
+      "values": null,
+      "view_type": "slider",
+      "min": 1,
+      "max": 100,
+      "view_max": 100,
+      "step": 1,
+      "visible": true,
+      "toggleable": false,
+      "priority": 0,
+      "advanced": false,
+      "feature_flag": null,
+      "do_not_save": false,
+      "revalueGetter": null,
+      "no_popover": true,
+      "group": {
+        "name": "Basic settings",
+        "id": "basicsettings",
+        "open": false,
+        "priority": 0.5,
+        "advanced": false,
+        "can_shrink": true,
+        "toggles": false
+      }
+    },
+    "loratoload": {
+      "name": "Lora to load",
+      "id": "loratoload",
+      "type": "model",
+      "subtype": "LoRA",
+      "description": "",
+      "default": "",
+      "values": null,
+      "min": 0,
+      "max": 0,
+      "view_max": 0,
+      "step": 0,
+      "visible": true,
+      "toggleable": false,
+      "priority": 2,
+      "advanced": false,
+      "feature_flag": null,
+      "do_not_save": false,
+      "revalueGetter": null,
+      "no_popover": true,
+      "group": {
+        "name": "Basic settings",
+        "id": "basicsettings",
+        "open": false,
+        "priority": 0.5,
+        "advanced": false,
+        "can_shrink": true,
+        "toggles": false
+      }
+    },
+    "cfg": {
+      "name": "Cfg",
+      "id": "cfg",
+      "type": "decimal",
+      "subtype": null,
+      "description": "",
+      "default": 7,
+      "values": null,
+      "view_type": "slider",
+      "min": 0,
+      "max": 100,
+      "view_max": 100,
+      "step": 0.5,
+      "visible": true,
+      "toggleable": false,
+      "priority": 0,
+      "advanced": false,
+      "feature_flag": null,
+      "do_not_save": false,
+      "revalueGetter": null,
+      "no_popover": true,
+      "group": {
+        "name": "Advanced settings",
+        "id": "advancedsettings",
+        "open": false,
+        "priority": 1,
+        "advanced": false,
+        "can_shrink": true,
+        "toggles": false
+      }
+    },
+    "sampler": {
+      "name": "Sampler",
+      "id": "sampler",
+      "type": "dropdown",
+      "subtype": null,
+      "description": "",
+      "default": "",
+      "values": [
+        "euler",
+        "euler_cfg_pp",
+        "euler_ancestral",
+        "euler_ancestral_cfg_pp",
+        "heun",
+        "heunpp2",
+        "dpm_2",
+        "dpm_2_ancestral",
+        "lms",
+        "dpm_fast",
+        "dpm_adaptive",
+        "dpmpp_2s_ancestral",
+        "dpmpp_sde",
+        "dpmpp_sde_gpu",
+        "dpmpp_2m",
+        "dpmpp_2m_sde",
+        "dpmpp_2m_sde_gpu",
+        "dpmpp_3m_sde",
+        "dpmpp_3m_sde_gpu",
+        "ddpm",
+        "lcm",
+        "ipndm",
+        "ipndm_v",
+        "deis",
+        "ddim",
+        "uni_pc",
+        "uni_pc_bh2"
+      ],
+      "min": 0,
+      "max": 0,
+      "view_max": 0,
+      "step": 0,
+      "visible": true,
+      "toggleable": false,
+      "priority": 0,
+      "advanced": false,
+      "feature_flag": null,
+      "do_not_save": false,
+      "revalueGetter": null,
+      "no_popover": true,
+      "group": {
+        "name": "Advanced settings",
+        "id": "advancedsettings",
+        "open": false,
+        "priority": 1,
+        "advanced": false,
+        "can_shrink": true,
+        "toggles": false
+      }
+    },
+    "scheduler": {
+      "name": "Scheduler",
+      "id": "scheduler",
+      "type": "dropdown",
+      "subtype": null,
+      "description": "",
+      "default": "",
+      "values": [
+        "normal",
+        "karras",
+        "exponential",
+        "sgm_uniform",
+        "simple",
+        "ddim_uniform",
+        "pcm"
+      ],
+      "min": 0,
+      "max": 0,
+      "view_max": 0,
+      "step": 0,
+      "visible": true,
+      "toggleable": false,
+      "priority": 0,
+      "advanced": false,
+      "feature_flag": null,
+      "do_not_save": false,
+      "revalueGetter": null,
+      "no_popover": true,
+      "group": {
+        "name": "Advanced settings",
+        "id": "advancedsettings",
+        "open": false,
+        "priority": 1,
+        "advanced": false,
+        "can_shrink": true,
+        "toggles": false
+      }
+    }
+  },
+  "param_values": {},
+  "image": "/imgs/model_placeholder.jpg",
+  "description": "This workflow has basic settings for SDXL",
+  "enable_in_simple": true
+}

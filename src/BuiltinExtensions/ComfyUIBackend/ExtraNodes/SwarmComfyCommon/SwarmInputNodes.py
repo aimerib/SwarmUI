@@ -1,6 +1,6 @@
 from . import SwarmLoadImageB64
 import folder_paths
-from nodes import CheckpointLoaderSimple
+from nodes import CheckpointLoaderSimple, LoraLoader
 
 INT_MAX = 0xffffffffffffffff
 INT_MIN = -INT_MAX
@@ -128,6 +128,22 @@ class SwarmInputModelName:
     def do_input(self, value, **kwargs):
         return (value, )
 
+class SwarmInputLoras:
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "title": ("STRING", {"default": "My Lora"}),
+                "value": (folder_paths.get_filename_list("loras"),),
+            } | STANDARD_REQ_INPUTS,
+        } | STANDARD_OTHER_INPUTS
+
+    CATEGORY = "SwarmUI/inputs"
+    RETURN_TYPES = ("",)
+    FUNCTION = "do_input"
+
+    def do_input(self, value, **kwargs):
+        return (value, )
 
 class SwarmInputCheckpoint:
     @classmethod
@@ -217,4 +233,5 @@ NODE_CLASS_MAPPINGS = {
     "SwarmInputDropdown": SwarmInputDropdown,
     "SwarmInputBoolean": SwarmInputBoolean,
     "SwarmInputImage": SwarmInputImage,
+    "SwarmInputLoras": SwarmInputLoras,
 }

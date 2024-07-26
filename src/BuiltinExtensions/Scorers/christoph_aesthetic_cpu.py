@@ -1,6 +1,3 @@
-### Based on https://github.com/christophschuhmann/improved-aesthetic-predictor/blob/main/simple_inference.py
-### Under Apache license 2.0
-
 import torch
 import pytorch_lightning as pl
 import torch.nn as nn
@@ -41,17 +38,24 @@ class AestheticPredictor():
         self.model2.to(dev)
 
     def load(self, name, device):
-        self.model = MLP(768)  # CLIP embedding dim is 768 for CLIP ViT L 14
+        self.model = MLP(768)
         s = torch.load(name, map_location=torch.device('cpu'))
         self.model.load_state_dict(s)
-        self.model.eval().to(device)
-        self.model2, self.preprocess = clip.load("ViT-L/14", device=device)  #RN50x64
-        self.model2.eval().to(device)
+
+        self.model.to(device).to(torch.float32)
+        self.model.eval()
+
+        self.model2, self.preprocess = clip.load("ViT-L/14", device=device)
+        self.model2.to(device).to(torch.float32)
+        self.model2.eval()
 
     def predict(self, img):
-        image = self.preprocess(img).unsqueeze(0).to(self.model.device).to(torch.float32)
+        image = self.preprocess(img).unsqueeze(0).to(self.model.device)
+        image = image.to(torch.float32)
+
         with torch.no_grad():
             image_features = self.model2.encode_image(image)
-            im_emb_arr = normalized(image_features.numpy())
-            prediction = self.model(torch.from_numpy(im_emb_arr).to(self.model.device).type(torch.float32))
+            im_emb_arr = torch.from_numpy(normalized(image_features.cpu().numpy())).to(self.model.device).to(torch.float32)
+
+            prediction = self.model(im_emb_arr)
             return prediction.cpu().detach().numpy()

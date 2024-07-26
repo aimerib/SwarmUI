@@ -8,7 +8,7 @@ class GenerateHandler {
         this.interrupted = -1;
         this.imageContainerDivId = 'current_image';
         this.imageId = 'current_image_img';
-        this.progressBarHtml = `<div class="image-preview-progress-inner"><div class="image-preview-progress-overall"></div><div class="image-preview-progress-current"></div></div>`;
+        this.progressBarHtml = `<div class="image-preview-progress-inner"><div class="image-preview-progress-overall"></div><div class="image-preview-progress-current"><div class="image-preview-progress-current-percentage"></div></div></div>`;
     }
 
     resetBatchIfNeeded() {
@@ -50,6 +50,9 @@ class GenerateHandler {
 
     doInterrupt(allSessions = false) {
         this.interrupted = this.batchesEver;
+        if(isLikelyMobile()){
+            document.getElementById('alt_prompt_region').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
         doInterrupt(allSessions);
     }
 
@@ -72,7 +75,7 @@ class GenerateHandler {
     getBatchId() {
         return ++this.batchesEver;
     }
-    
+
     doGenerate(input_overrides = {}, input_preoverrides = {}) {
         if (session_id == null) {
             if (Date.now() - time_started > 1000 * 60) {
@@ -88,6 +91,9 @@ class GenerateHandler {
             delete input_overrides['_preview'];
         }
         this.beforeGenRun();
+        if(isLikelyMobile()){
+            document.getElementById("current_image_batch").scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
         let run = () => {
             this.resetBatchIfNeeded();
             let images = {};
@@ -141,6 +147,9 @@ class GenerateHandler {
                         }
                         discardable[data.batch_index] = images[data.batch_index];
                         delete images[data.batch_index];
+                        if(isLikelyMobile()){
+                            document.getElementById('current_image').scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }
                     }
                 }
                 if (data.gen_progress) {
@@ -172,6 +181,15 @@ class GenerateHandler {
                                 }
                                 imgHolder.div.dataset.src = data.gen_progress.preview;
                                 imgHolder.div.querySelector('img').src = data.gen_progress.preview;
+                                let percentCounter = document.querySelectorAll(".image-preview-progress-current-percentage")
+                                let currentStep = Math.floor(data.gen_progress.current_percent * actualInput.steps);
+                                percentCounter.innerText = `Step ${currentStep} of ${actualInput.steps}`;
+                                let newPercentCounter = document.createElement('div');
+                                let currImgBatch = document.getElementById("current_image_batch");
+                                newPercentCounter.className = "image-preview-progress-current-percentage";
+                                newPercentCounter.innerText = `Step ${currentStep} of ${actualInput.steps}`;
+                                percentCounter.forEach(p => p.parentElement.removeChild(p));
+                                currImgBatch.parentElement.insertBefore(newPercentCounter, currImgBatch.parentElement.children[1]);
                                 imgHolder.image = data.gen_progress.preview;
                             }
                         }

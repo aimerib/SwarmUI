@@ -42,16 +42,16 @@ class AestheticPredictor():
 
     def load(self, name, device):
         self.model = MLP(768)  # CLIP embedding dim is 768 for CLIP ViT L 14
-        s = torch.load(name, map_location=torch.device('cpu'))
+        s = torch.load(name)
         self.model.load_state_dict(s)
         self.model.eval().to(device)
         self.model2, self.preprocess = clip.load("ViT-L/14", device=device)  #RN50x64
         self.model2.eval().to(device)
 
     def predict(self, img):
-        image = self.preprocess(img).unsqueeze(0).to(self.model.device).to(torch.float32)
-        with torch.no_grad():
+        image = self.preprocess(img).unsqueeze(0).to(self.model.device).to(self.model.dtype)
+        with torch.no_grad(), torch.autocast('cuda', self.model.dtype):
             image_features = self.model2.encode_image(image)
-            im_emb_arr = normalized(image_features.numpy())
-            prediction = self.model(torch.from_numpy(im_emb_arr).to(self.model.device).type(torch.float32))
+            im_emb_arr = normalized(image_features.cpu().detach().numpy())
+            prediction = self.model(torch.from_numpy(im_emb_arr).to(self.model.device).type(torch.cuda.FloatTensor))
             return prediction.cpu().detach().numpy()

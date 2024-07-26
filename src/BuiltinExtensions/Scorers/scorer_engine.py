@@ -17,8 +17,8 @@ def log(text):
 
 
 ################ Core ################
-DEVICE = "cuda"
-DTYPE = torch.float16
+DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+DTYPE = torch.float16 if torch.cuda.is_available() else torch.float32
 
 class Scorer():
     def load(self):
@@ -87,14 +87,17 @@ class aesth_scorer(Scorer):
             r = requests.get(url)
             with open(self.model_id, "wb") as f:
                 f.write(r.content)
-        from christoph_aesthetic import AestheticPredictor
+        if DEVICE == 'cuda':
+            from christoph_aesthetic import AestheticPredictor
+        else:
+            from christoph_aesthetic_cpu import AestheticPredictor
         self.model = AestheticPredictor()
         self.model.load(self.model_id, DEVICE)
 
     def unload(self):
         if self.model:
             self.model.to('cpu')
-    
+
     def correct(self, score):
         return (score - self.min) / self.scale
 
@@ -139,9 +142,11 @@ class Handler(BaseHTTPRequestHandler):
                 imgs = [Image.open(BytesIO(base64.b64decode(message['image']))).convert('RGB')]
                 score = max(0, min(1, scorer.calculate(message['prompt'], imgs)[0]))
                 t_after = time.time()
-                max_mem = torch.cuda.max_memory_allocated()
-                log(f"allocated max mem: {max_mem / 1024 / 1024 / 1024:.3f} GiB, took {t_after - t_before:.3f} seconds, yielded value {score}")
-                torch.cuda.empty_cache()
+                if DEVICE == "cuda":
+                    max_mem = torch.cuda.max_memory_allocated()
+                    log(f"allocated max mem: {max_mem / 1024 / 1024 / 1024:.3f} GiB, took {t_after - t_before:.3f} seconds, yielded value {score}")
+                    torch.cuda.empty_cache()
+                log(f"Took {t_after - t_before:.3f} seconds, yielded value {score}")
                 self.good_response({'result': score, 'log': LOG_TEXT})
                 LOG_TEXT = ''
             except Exception as ex:

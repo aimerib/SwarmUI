@@ -598,26 +598,27 @@ public class Program
             }
             string key = arg[2..].ToLower();
             string value;
+            // Check for key=value
             int equalsCharIndex = key.IndexOf('=');
             if (equalsCharIndex != -1)
             {
-                if (equalsCharIndex == 0 || equalsCharIndex == (key.Length - 1))
+                if (equalsCharIndex == 0)
                 {
-                    throw new SwarmUserErrorException($"Error: Invalid commandline argument '{arg}'");
+                    // Empty key (=value)
+                    throw new InvalidDataException($"Error: Invalid commandline argument '{arg}'");
+                }
+                else if (equalsCharIndex == (key.Length - 1))
+                {
+                    // Empty value (key=)
+                    throw new InvalidDataException($"Error: Invalid commandline argument '{arg}'");
                 }
                 value = key[(equalsCharIndex + 1)..];
                 key = key[..equalsCharIndex];
             }
             else
             {
-                if (i + 1 < args.Length && !args[i + 1].StartsWith("--"))
-                {
-                    value = args[++i];
-                }
-                else
-                {
-                    value = "true";
-                }
+                // Next argument is the value, or this is a bool "On" flag
+                value = (i + 1 < args.Length && !args[i + 1].StartsWith("--")) ? args[++i] : "true";
             }
             if (CommandLineFlags.ContainsKey(key))
             {
@@ -663,29 +664,25 @@ public class Program
     public static void PrintCommandLineHelp()
     {
         Console.WriteLine($"""
-            SwarmUI v{Utilities.Version}
+SwarmUI v{Utilities.Version}
 
-            Options:
-              [--data_dir <path>] [--settings_file <path>] [--backends_file <path>] [--environment <Production/Development>]
-              [--host <hostname>] [--port <port>] [--asp_loglevel <level>] [--loglevel <level>]
-              [--user_id <username>] [--lock_settings <true/false>] [--ngrok-path <path>] [--cloudflared-path <path>]
-              [--proxy-region <region>] [--ngrok-basic-auth <auth-info>] [--launch_mode <mode>] [--help <true/false>]
+Options:
+  [--data_dir <path>] [--settings_file <path>] [--backends_file <path>] [--environment <env>]
+  [--host <hostname>] [--port <port>] [--asp_loglevel <level>] [--loglevel <level>]
+  [--user_id <username>] [--lock_settings] [--ngrok-path <path>] [--cloudflared-path <path>]
+  [--proxy-region <region>] [--ngrok-basic-auth] [--launch_mode <mode>] [--help]
 
-            Generally, CLI args are almost never used. When they are are, they usually fall into the following categories:
-              - `settings_file`, `lock_settings`, `backends_file`, `loglevel` may be useful to advanced users will multiple instances.
-              - `cloudflared-path` is useful for remote tunnel users (eg colab).
-              - `host`, `port`, and `launch_mode` may be useful in developmental usages where you need to quickly or automatically change network paths.
+Additional documentation is available online: <https://github.com/mcmonkeyprojects/SwarmUI/blob/master/docs/Command%20Line%20Arguments.md>
 
-            Additional documentation about the CLI args is available online: <https://github.com/mcmonkeyprojects/SwarmUI/blob/master/docs/Command%20Line%20Arguments.md> or in the `docs/` folder of this repo.
+Find more information about SwarmUI in the project's official github.
+  - Project Github: <https://github.com/mcmonkeyprojects/SwarmUI>
+  - Feature Announcements: <https://github.com/mcmonkeyprojects/SwarmUI/discussions/1>
+  - Complete Documentation: https://github.com/mcmonkeyprojects/SwarmUI/tree/master/docs>
+  - Software License: <https://github.com/mcmonkeyprojects/SwarmUI/blob/master/LICENSE.txt>
 
-            Find more information about SwarmUI in the GitHub readme and docs folder:
-              - Project Github: <https://github.com/mcmonkeyprojects/SwarmUI>
-              - Documentation: <https://github.com/mcmonkeyprojects/SwarmUI/tree/master/docs>
-              - Feature Announcements: <https://github.com/mcmonkeyprojects/SwarmUI/discussions/1>
-              - License (MIT): <https://github.com/mcmonkeyprojects/SwarmUI/blob/master/LICENSE.txt>
-
-            Join the Discord <https://discord.gg/q2y38cqjNw> to discuss the project, get support, see announcements, etc.
-            """);
+Join the Discord <https://discord.gg/q2y38cqjNw> to discuss the project, get support, see announcements, etc.
+""");
     }
+
     #endregion
 }

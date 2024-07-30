@@ -865,22 +865,6 @@ function toHexString(byteArray) {
     return String.fromCharCode.apply(null, chars);
 }
 
-/** Gets a hex string from a byte array. */
-function toHexString(byteArray) {
-    // Efficient method from https://stackoverflow.com/a/55426656
-    let chars = new Uint8Array(byteArray.length * 2);
-    const alpha = 'a'.charCodeAt(0) - 10;
-    const digit = '0'.charCodeAt(0);
-    let p = 0;
-    for (let i = 0; i < byteArray.length; i++) {
-        let nibble = byteArray[i] >>> 4;
-        chars[p++] = nibble > 9 ? nibble + alpha : nibble + digit;
-        nibble = byteArray[i] & 0xF;
-        chars[p++] = nibble > 9 ? nibble + alpha : nibble + digit;
-    }
-    return String.fromCharCode.apply(null, chars);
-}
-
 /** Gets the section of a string before the last index of a given character. If the character is not present, returns the full string. */
 function strBeforeLast(str, char) {
     let index = str.lastIndexOf(char);

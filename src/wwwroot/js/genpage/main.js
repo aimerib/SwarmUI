@@ -1341,6 +1341,7 @@ let toolContainer = getRequiredElementById('tool_container');
 
 function genToolsList() {
     let altGenerateButton = getRequiredElementById('alt_generate_button');
+    let altGenerateButtonMobile = document.getElementById('alt_generate_button_mobile');
     let oldGenerateButton = document.getElementById('generate_button');
     let altGenerateButtonRawText = altGenerateButton.innerText;
     let altGenerateButtonRawOnClick = altGenerateButton.onclick;
@@ -1367,6 +1368,9 @@ function genToolsList() {
             altGenerateButton.onclick = override.run;
             if (oldGenerateButton) {
                 oldGenerateButton.innerText = override.text;
+            }
+            if (altGenerateButtonMobile && isVisible(altGenerateButtonMobile)) {
+                altGenerateButtonMobile.onclick = override.run;
             }
         }
     });
@@ -1677,7 +1681,7 @@ function pageSizer() {
         });
     }
     altText.addEventListener('keydown', (e) => {
-        if (e.key == 'Enter' && !e.shiftKey) {
+        if (e.key == 'Enter' && (e.metaKey || e.ctrlKey)) {
             altText.dispatchEvent(new Event('change'));
             getRequiredElementById('alt_generate_button').click();
             e.preventDefault();

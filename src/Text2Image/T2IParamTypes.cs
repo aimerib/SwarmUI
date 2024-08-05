@@ -91,7 +91,7 @@ public enum ParamViewType
 /// <param name="Subtype">The sub-type of the type - for models, this might be eg "Stable-Diffusion".</param>
 /// <param name="ID">The raw ID of this parameter (will be set when registering).</param>
 /// <param name="SharpType">The C# datatype.</param>
-/// 
+///
 public record class T2IParamType(string Name, string Description, string Default, double Min = 0, double Max = 0, double Step = 1, double ViewMin = 0, double ViewMax = 0,
     Func<string, string, string> Clean = null, Func<Session, List<string>> GetValues = null, string[] Examples = null, Func<List<string>, List<string>> ParseList = null, bool ValidateValues = true,
     bool VisibleNormally = true, bool IsAdvanced = false, string FeatureFlag = null, PermInfo Permission = null, bool Toggleable = false, double OrderPriority = 10, T2IParamGroup Group = null, string IgnoreIf = null,
@@ -378,8 +378,8 @@ public class T2IParamTypes
             "0", IgnoreIf: "0", Min: 0, Max: 1, Step: 0.05, Examples: ["0", "0.25", "0.5", "0.75"], OrderPriority: -17, ViewType: ParamViewType.SLIDER, Group: GroupVariation, FeatureFlag: "variation_seed", ChangeWeight: -4
             ));
         GroupResolution = new("Resolution", Toggles: false, Open: false, OrderPriority: -11);
-        AspectRatio = Register<string>(new("Aspect Ratio", "Image aspect ratio - that is, the shape of the image (wide vs square vs tall).\nSet to 'Custom' to define a manual width/height instead.\nSome models can stretch better than others.\nNotably Flux models support almost any resolution you feel like trying.",
-            "1:1", GetValues: (_) => ["1:1///1:1 (Square)", "4:3///4:3 (Old PC)", "3:2///3:2 (Semi-wide)", "8:5///8:5", "16:9///16:9 (Standard Widescreen)", "21:9///21:9 (Ultra-Widescreen)", "3:4///3:4", "2:3///2:3 (Semi-tall)", "5:8///5:8", "9:16///9:16 (Tall)", "9:21///9:21 (Ultra-Tall)", "Custom"], OrderPriority: -11, Group: GroupResolution
+        AspectRatio = Register<string>(new("Aspect Ratio", "Image aspect ratio. Some models can stretch better than others.",
+            "1:1", GetValues: (_) => ["1:1///1:1 (Square)", "4:3///4:3 (Landscape Photograph)", "3:2///3:2 (Semi-wide)", "8:5///8:5", "16:9///16:9 (Standard Widescreen)", "21:9///21:9 (Ultra-Widescreen)", "3:4///3:4 (Portrait Photograph)", "2:3///2:3 (Semi-tall)", "5:8///5:8", "9:16///9:16 (Tall)", "9:21///9:21 (Ultra-Tall)", "Custom"], OrderPriority: -11, Group: GroupResolution
             ));
         Width = Register<int>(new("Width", "Image width, in pixels.\nSDv1 uses 512, SDv2 uses 768, SDXL prefers 1024.\nSome models allow variation within a range (eg 512 to 768) but almost always want a multiple of 64.\nFlux is very open to differing values.",
             "512", Min: 64, ViewMin: 256, Max: 16384, ViewMax: 2048, Step: 32, Examples: ["512", "768", "1024"], OrderPriority: -10, ViewType: ParamViewType.POT_SLIDER, Group: GroupResolution

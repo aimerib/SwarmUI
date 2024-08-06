@@ -699,7 +699,7 @@ function onImageInputPaste(e) {
     let files = e.clipboardData.files;
     if (files.length > 0 && files[0].type.startsWith('image/')) {
         element.files = files;
-        load_image_file(element);
+        triggerChangeFor(element);
     }
 }
 

@@ -2087,9 +2087,10 @@ body {
         width: 20px !important;
         height: 20px !important;
     }
-    input[type="range"]::-webkit-slider-thumb {
-        width: 20px !important;
-        height: 20px !important;
+
+    .current-image-extras-wrapper.expanded {
+        display: block;
+        transform: translateY(0);
     }
 
     .auto-slider-toggle-content::after {

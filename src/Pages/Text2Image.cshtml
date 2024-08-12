@@ -87,8 +87,14 @@
     <div class="tab-pane show active" style="line-height:0" id="Text2Image" role="tabpanel">
         <div class="t2i-top-bar-container" style="line-height:1.5">
             <div class="t2i-top-bar" id="t2i_top_bar">
+                <div class="modal modal-fullscreen imageview_popup_modal_background" id="image_fullview_modal">
+                    <div id="image_fullview_modal_content" style="width:fit-content;margin:auto;"></div>
+                    <div style="position: fixed; top: 1rem; right: 10%; width: 0; height: 0">
+                        <span class="text_button translate" onclick="imageFullView.close()">[Close]</span>
+                    </div>
+                </div>
                 <div class="main-image-area" id="main_image_area">
-                    <div class="image_editor_input" id="image_editor_input" style="display:none;"></div><div class="image_editor_sizebar splitter-bar t2i-top-imageeditor-bar" id="image_editor_sizebar" style="display:none;"></div><div class="current_image" id="current_image"><div id="welcome_message" class="welcome_message">@(new HtmlString(Program.VersionUpdateMessage ?? Program.ServerSettings.UI.OverrideWelcomeMessage))</div></div><div class="t2i-top-split-bar splitter-bar" id="t2i-top-2nd-split-bar"></div>
+                    <div class="image_editor_input" id="image_editor_input" style="display:none;"></div><div class="image_editor_sizebar splitter-bar t2i-top-imageeditor-bar" id="image_editor_sizebar" style="display:none;"></div><div class="current_image" id="current_image"><div id="welcome_message" class="welcome_message">@(new HtmlString(Program.VersionUpdateMessage ?? Program.ServerSettings.UI.OverrideWelcomeMessage))</div>    <div class="mobile-expand-indicator" id="mobile_expand_indicator">&#9660; More Info</div></div><div class="t2i-top-split-bar splitter-bar" id="t2i-top-2nd-split-bar"></div>
                     <div class="current_image_batch" id="current_image_batch_wrapper">
                         <div style="position: relative; width: 0; height: 0;">
                             <div class="batch-gear-button" onclick="doPopover('batchgear')">&#9881;</div>
@@ -134,7 +140,7 @@
                             </div>
                             <div class="alt_prompt_buttons">
                                 <button class="alt-prompt-buttons alt-prompt-generate-button basic-button translate d-none d-md-inline-block" id="alt_generate_button" oncontextmenu="doPopover('generate'); return false;" onclick="mainGenHandler.doGenerateButton(event)">Generate</button>
-                                <button class="alt-prompt-buttons alt-prompt-generate-button basic-button translate d-md-none position-fixed bottom-0 end-0 m-3 rounded-circle" id="alt_generate_button_mobile" style="width: 56px; height: 56px; z-index: 1030;" oncontextmenu="doPopover('generate'); return false;" onclick="mainGenHandler.doGenerateButton(event)">
+                                <button class="alt-prompt-buttons alt-prompt-generate-button basic-button translate d-md-none position-fixed bottom-0 end-0 m-3 rounded-circle" id="alt_generate_button_mobile" style="width: 56px; height: 56px; z-index: 1030;">
                                     <i class="bi bi-plus-lg"></i>
                                 </button>
                                 <button class="alt-prompt-buttons alt-prompt-center-button basic-button d-none d-md-inline-block" id="alt_center_button" oncontextmenu="doPopover('generate_center'); return false;" onclick="doPopover('generate_center')">&#x2B9F;</button>
@@ -280,12 +286,6 @@
             <div class="tab-content" id="t2i_bottom_bar_content">
                 <div class="tab-pane show active genpage-bottom-tab" id="Image-History-Tab" role="tabpanel">
                     <div class="browser_container" id="image_history"></div>
-                </div>
-                <div class="modal modal-fullscreen imageview_popup_modal_background" id="image_fullview_modal">
-                    <div id="image_fullview_modal_content" style="width:fit-content;margin:auto;"></div>
-                    <div style="position: fixed; top: 1rem; right: 10%; width: 0; height: 0">
-                        <span class="text_button translate" onclick="imageFullView.close()">[Close]</span>
-                    </div>
                 </div>
                 <div class="tab-pane genpage-bottom-tab" id="Presets-Tab" role="tabpanel">
                     @WebUtil.ModalHeader("export_presets_modal", "Export Presets")
@@ -963,22 +963,45 @@
 </div>
 
 @section Scripts {
-    <script src="/js/exifr.min.js"></script>
-    <script src="/js/genpage/welcomemessages.js?vary=@Utilities.VaryID"></script>
-    <script src="/js/genpage/backends.js?vary=@Utilities.VaryID"></script>
-    <script src="/js/genpage/browsers.js?vary=@Utilities.VaryID"></script>
-    <script src="/js/genpage/presets.js?vary=@Utilities.VaryID"></script>
-    <script src="/js/genpage/models.js?vary=@Utilities.VaryID"></script>
-    <script src="/js/genpage/params.js?vary=@Utilities.VaryID"></script>
-    <script src="/js/genpage/utiltab.js?vary=@Utilities.VaryID"></script>
-    <script src="/js/genpage/usertab.js?vary=@Utilities.VaryID"></script>
-    <script src="/js/genpage/image_editor.js?vary=@Utilities.VaryID"></script>
-    <script src="/js/genpage/generatehandler.js?vary=@Utilities.VaryID"></script>
-    <script src="/js/genpage/simpletab.js?vary=@Utilities.VaryID"></script>
-    <script src="/js/genpage/mobile.js?vary=@Utilities.VaryID"></script>
-    <script src="/js/genpage/main.js?vary=@Utilities.VaryID"></script>
-    <script src="/js/genpage/settings_editor.js?vary=@Utilities.VaryID"></script>
-    <script src="/js/genpage/logs.js?vary=@Utilities.VaryID"></script>
-    <script src="/js/genpage/ui_improvements.js?vary=@Utilities.VaryID"></script>
-    @WebServer.PageFooterExtra
+    <script src="js/LAB.min.js"></script>
+    <script>
+       $LAB.setGlobalDefaults({AllowDuplicates: true, CacheBust: true});
+        $LAB
+        .script("/js/jquery.min.js").wait()
+        .script("/js/bootstrap.min.js")
+        .script("/js/select2.min.js")
+        .script("/js/util.js?vary=@Utilities.VaryID")
+        .script("/js/translator.js?vary=@Utilities.VaryID")
+        .script("/js/site.js?vary=@Utilities.VaryID")
+        .script("/js/exifr.min.js")
+        .script("/js/genpage/mobile.js?vary=@Utilities.VaryID")
+        .script("/js/genpage/browsers.js?vary=@Utilities.VaryID")
+        .script("/js/genpage/logs.js?vary=@Utilities.VaryID")
+        .script("/js/genpage/ui_improvements.js?vary=@Utilities.VaryID")
+        .script("/js/genpage/generatehandler.js?vary=@Utilities.VaryID")
+        .script("/js/genpage/params.js?vary=@Utilities.VaryID")
+        .script("/js/genpage/image_editor.js?vary=@Utilities.VaryID")
+        .script("/js/genpage/main.js?vary=@Utilities.VaryID")
+        .script("/js/genpage/welcomemessages.js?vary=@Utilities.VaryID")
+        .script("/js/genpage/backends.js?vary=@Utilities.VaryID")
+        .script("/js/genpage/presets.js?vary=@Utilities.VaryID")
+        .script("/js/genpage/models.js?vary=@Utilities.VaryID")
+        .script("/js/genpage/utiltab.js?vary=@Utilities.VaryID")
+        .script("/js/genpage/usertab.js?vary=@Utilities.VaryID")
+        .script("/js/genpage/simpletab.js?vary=@Utilities.VaryID")
+        @{
+            var footerScriptsString = WebServer.PageFooterExtra.ToString();
+            var footerScripts = footerScriptsString.Split(new[] { "<script src=\"", "\"></script>" }, StringSplitOptions.RemoveEmptyEntries);
+            foreach (var script in footerScripts)
+            {
+                <text>.script("@Html.Raw(script.Trim())")</text>
+            }
+        }
+        .script("/js/genpage/settings_editor.js?vary=@Utilities.VaryID").wait(function () {
+            requestAnimationFrame(function() {
+                genpageLoad();
+            });
+        });
+    </script>
+    @* @WebServer.PageFooterExtra *@
 }

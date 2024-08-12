@@ -75,6 +75,18 @@ function createDiv(id, classes, html = null) {
     return div;
 }
 
+function createEl(el, id, classes, html = null) {
+    let node = document.createElement(el);
+    if (id != null) {
+        node.id = id;
+    }
+    node.className = classes;
+    if (html) {
+        node.innerHTML = html;
+    }
+    return node;
+}
+
 /** Escapes a string for use in HTML. */
 function escapeHtml(text) {
     if (text == null) {

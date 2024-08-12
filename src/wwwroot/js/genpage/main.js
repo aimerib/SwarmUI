@@ -662,7 +662,25 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
     img.id = 'current_image_img';
     img.dataset.src = src;
     img.dataset.batch_id = batchId;
-    img.onclick = () => imageFullView.showImage(src, metadata);
+    img.addEventListener('click', (event) => {
+        event.preventDefault();
+        imageFullView.showImage(src, metadata);
+    });
+
+    img.addEventListener('touchend', (event) => {
+        event.preventDefault();
+
+            imageFullView.showImage(src, metadata);
+
+    });
+
+    img.addEventListener('touchmove', (event) => {
+        img.dataset.moved = true;
+    });
+
+    img.addEventListener('touchstart', (event) => {
+        img.dataset.moved = false;
+    });
     let extrasWrapper = isReuse ? document.getElementById('current-image-extras-wrapper') : createDiv('current-image-extras-wrapper', 'current-image-extras-wrapper');
     extrasWrapper.innerHTML = '';
     let buttons = createDiv(null, 'current-image-buttons');
@@ -857,6 +875,7 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
         curImg.appendChild(img);
         curImg.appendChild(extrasWrapper);
     }
+    if (isLikelyMobile()) setupMobileCurrentImageExtras();
 }
 
 function appendImage(container, imageSrc, batchId, textPreview, metadata = '', type = 'legacy', prepend = true) {
@@ -1628,11 +1647,9 @@ function pageSizer() {
         inputSidebar.style.width = `${barTopLeft}`;
         mainInputsAreaWrapper.classList[pageBarTop < 350 ? "add" : "remove"]("main_inputs_small");
         mainInputsAreaWrapper.style.width = `${barTopLeft}`;
-        inputSidebar.style.display = leftShut ? 'none' : '';
+        if (!isLikelyMobile()) inputSidebar.style.display = leftShut ? 'none' : '';
         altRegion.style.width = `calc(100vw - ${barTopLeft} - ${barTopRight} - 10px)`;
-        if(!isLikelyMobile()){
-            mainImageArea.style.width = `calc(100vw - ${barTopLeft})`;
-        }
+        if(!isLikelyMobile()) mainImageArea.style.width = `calc(100vw - ${barTopLeft})`;
         mainImageArea.scrollTop = 0;
         if (imageEditor.active) {
             let imageEditorSizePercent = imageEditorSizeBarVal < 0 ? 0.5 : (imageEditorSizeBarVal / 100.0);
@@ -1656,7 +1673,7 @@ function pageSizer() {
             let fixed = midForceToBottom ? `6.5rem` : `${pageBarMid}px`;
             topSplit.style.height = `calc(100vh - ${fixed})`;
             topSplit2.style.height = `calc(100vh - ${fixed})`;
-            inputSidebar.style.height = `calc(100vh - ${fixed})`;
+            if (!isLikelyMobile()) inputSidebar.style.height = `calc(100vh - ${fixed})`;
             mainInputsAreaWrapper.style.height = `calc(100vh - ${fixed})`;
             mainImageArea.style.height = `calc(100vh - ${fixed})`;
             currentImage.style.height = `calc(100vh - ${fixed} - ${altHeight})`;
@@ -2530,4 +2547,4 @@ function genpageLoad() {
     });
 }
 
-setTimeout(genpageLoad, 1);
+// setTimeout(genpageLoad, 1);

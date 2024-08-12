@@ -320,15 +320,18 @@ public class T2IParamTypes
     /// <summary>(Called by <see cref="Program"/> during startup) registers all default parameter types.</summary>
     public static void RegisterDefaults()
     {
+        Model = Register<T2IModel>(new("Model", "What main checkpoint model should be used.",
+            "", Permission: "param_model", VisibleNormally: true, Subtype: "Stable-Diffusion", ChangeWeight: -5, OrderPriority: -100, ViewType: ParamViewType.NORMAL
+            ));
         Prompt = Register<string>(new("Prompt", "The input prompt text that describes the image you want to generate.\nTell the AI what you want to see.",
-            "", Clean: ApplyStringEdit, Examples: ["a photo of a cat", "a cartoonish drawing of an astronaut"], OrderPriority: -100, VisibleNormally: false, ViewType: ParamViewType.PROMPT, ChangeWeight: -5
+            "", Clean: ApplyStringEdit, Examples: ["a photo of a cat", "a cartoonish drawing of an astronaut"], OrderPriority: -95, VisibleNormally: false, ViewType: ParamViewType.PROMPT, ChangeWeight: -5
             ));
         PromptImages = Register<List<Image>>(new("Prompt Images", "Images to include with the prompt, for eg ReVision or UnCLIP.\nIf this parameter is visible, you've done something wrong - this parameter is tracked internally.",
-            "", IgnoreIf: "", OrderPriority: -95, Toggleable: true, VisibleNormally: false, IsAdvanced: true, ImageShouldResize: false, ChangeWeight: 2, HideFromMetadata: true // Has special internal handling
+            "", IgnoreIf: "", OrderPriority: -90, Toggleable: true, VisibleNormally: false, IsAdvanced: true, ImageShouldResize: false, ChangeWeight: 2, HideFromMetadata: true // Has special internal handling
             ));
         GroupAdvancedModelAddons = new("Advanced Model Addons", Open: false, IsAdvanced: true);
         NegativePrompt = Register<string>(new("Negative Prompt", "Like the input prompt text, but describe what NOT to generate.\nTell the AI things you don't want to see.",
-            "", IgnoreIf: "", Clean: ApplyStringEdit, Examples: ["ugly, bad, gross", "lowres, low quality"], OrderPriority: -90, ViewType: ParamViewType.PROMPT, ChangeWeight: -5, VisibleNormally: false
+            "", IgnoreIf: "", Clean: ApplyStringEdit, Examples: ["ugly, bad, gross", "lowres, low quality"], OrderPriority: -85, ViewType: ParamViewType.PROMPT, ChangeWeight: -5, VisibleNormally: false
             ));
         GroupImagePrompting = new("Image Prompting", Open: false, Toggles: true, OrderPriority: -70, Description: $"Image prompting with ReVision, IP-Adapter, etc.\n<a target=\"_blank\" href=\"{Utilities.RepoDocsRoot}/Features/ImagePrompting.md\">See more docs here.</a>");
         ReVisionStrength = Register<double>(new("ReVision Strength", $"How strong to apply ReVision image inputs.\nSet to 0 to disable ReVision processing.",

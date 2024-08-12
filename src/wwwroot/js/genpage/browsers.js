@@ -803,7 +803,10 @@ class GenPageBrowserClass {
             let file = files[i];
             id++;
             let desc = this.describe(file);
-            if (this.filter && !desc.searchable.toLowerCase().includes(this.filter)) {
+            if (
+                this.filter &&
+                !desc.searchable.toLowerCase().includes(this.filter)
+            ) {
                 continue;
             }
             if (i > maxBuildNow) {
@@ -874,9 +877,8 @@ class GenPageBrowserClass {
                 textBlock.tabIndex = 0;
                 textBlock.innerHTML = desc.description;
                 div.appendChild(textBlock);
-            }
-            else if (this.format.includes('Thumbnails')) {
-                div.className += ' image-block'; // image-block-legacy
+            } else if (this.format.includes("Thumbnails")) {
+                div.className += " image-block"; // image-block-legacy
                 let factor = 8;
                 if (this.format.startsWith("Big")) {
                     factor = 15;
@@ -958,7 +960,12 @@ class GenPageBrowserClass {
     makeVisible(elem) {
         for (let subElem of elem.querySelectorAll(".lazyload")) {
             let top = subElem.getBoundingClientRect().top;
-            if (!isLikelyMobile() && (top >= window.innerHeight + 512 || top == 0)) { // Note top=0 means not visible
+            if (
+                // !isLikelyMobile() &&
+                top >= window.innerHeight + 512 ||
+                top == 0
+            ) {
+                // Note top=0 means not visible
                 continue;
             }
             subElem.classList.remove("lazyload");
@@ -973,6 +980,105 @@ class GenPageBrowserClass {
                 subElem.remove();
             }
         }
+    }
+
+    getItemsForCurrentPage() {
+        const startIndex = (this.currentPage - 1) * this.itemsPerPage;
+        const endIndex = startIndex + this.itemsPerPage;
+        return this.items.slice(startIndex, endIndex);
+    }
+
+    renderPaginationControls() {
+        const paginationDiv = document.createElement("div");
+        paginationDiv.className = "pagination-controls";
+
+        const createPageButton = (page) => {
+            const button = document.createElement("button");
+            button.textContent = page;
+            button.className = "page-button";
+            if (page === this.currentPage) {
+                button.classList.add("active");
+            }
+            button.addEventListener("click", () => {
+                this.currentPage = page;
+                this.build(this.lastPath, null, this.lastFiles);
+                this.updateWithoutDup();
+                this.rerender();
+            });
+            return button;
+        };
+
+        const addEllipsis = () => {
+            const ellipsis = document.createElement("span");
+            ellipsis.textContent = "...";
+            ellipsis.className = "pagination-ellipsis";
+            paginationDiv.appendChild(ellipsis);
+        };
+
+        // Previous button
+        const prevButton = document.createElement("button");
+        prevButton.textContent = "←";
+        prevButton.className = "nav-button prev-button";
+        prevButton.disabled = this.currentPage === 1;
+        prevButton.addEventListener("click", () => {
+            if (this.currentPage > 1) {
+                this.currentPage--;
+                this.build(this.lastPath, null, this.lastFiles);
+                this.updateWithoutDup();
+                this.rerender();
+            }
+        });
+        paginationDiv.appendChild(prevButton);
+
+        // First three pages
+        for (let i = 1; i <= Math.min(2, this.totalPages); i++) {
+            paginationDiv.appendChild(createPageButton(i));
+        }
+
+        if (this.totalPages > 6) {
+            addEllipsis();
+
+            // Middle button for manual page input
+            const middleButton = document.createElement("button");
+            middleButton.textContent = "...";
+            middleButton.className = "page-button middle-button";
+            middleButton.addEventListener("click", () => {
+                const page = prompt("Enter page number:", this.currentPage);
+                if (page && !isNaN(page) && page > 0 && page <= this.totalPages) {
+                    this.currentPage = parseInt(page);
+                    this.build(this.lastPath, null, this.lastFiles);
+                    this.updateWithoutDup();
+                    this.rerender();
+                }
+            });
+            paginationDiv.appendChild(middleButton);
+
+            addEllipsis();
+        } else if (this.totalPages > 3) {
+            addEllipsis();
+        }
+
+        // Last two pages
+        for (let i = Math.max(this.totalPages - 1, 3); i <= this.totalPages; i++) {
+            paginationDiv.appendChild(createPageButton(i));
+        }
+
+        // Next button
+        const nextButton = document.createElement("button");
+        nextButton.textContent = "→";
+        nextButton.className = "nav-button next-button";
+        nextButton.disabled = this.currentPage === this.totalPages;
+        nextButton.addEventListener("click", () => {
+            if (this.currentPage < this.totalPages) {
+                this.currentPage++;
+                this.build(this.lastPath, null, this.lastFiles);
+                this.updateWithoutDup();
+                this.rerender();
+            }
+        });
+        paginationDiv.appendChild(nextButton);
+
+        return paginationDiv;
     }
 
     /**
@@ -1062,13 +1168,25 @@ class GenPageBrowserClass {
             : 0;
         if (!this.hasGenerated) {
             this.hasGenerated = true;
-            this.container.innerHTML = '';
-            this.folderTreeDiv = createDiv(`${this.id}-foldertree`, 'browser-folder-tree-container');
-            this.folderTreeDiv.classList.add('navbarToggler');
-            this.folderTreeDiv.classList.add('collapse');
-            let folderTreeSplitter = createDiv(`${this.id}-splitter`, 'browser-folder-tree-splitter splitter-bar');
-            this.headerBar = createDiv(`${this.id}-header`, 'browser-header-bar');
-            this.fullContentDiv = createDiv(`${this.id}-fullcontent`, 'browser-fullcontent-container');
+            this.container.innerHTML = "";
+            this.folderTreeDiv = createDiv(
+                `${this.id}-foldertree`,
+                "browser-folder-tree-container"
+            );
+            this.folderTreeDiv.classList.add("navbarToggler");
+            // this.folderTreeDiv.classList.add('collapse');
+            let folderTreeSplitter = createDiv(
+                `${this.id}-splitter`,
+                "browser-folder-tree-splitter splitter-bar"
+            );
+            this.headerBar = createDiv(
+                `${this.id}-header`,
+                "browser-header-bar"
+            );
+            this.fullContentDiv = createDiv(
+                `${this.id}-fullcontent`,
+                "browser-fullcontent-container"
+            );
             this.container.appendChild(this.folderTreeDiv);
             if (!isLikelyMobile()) {
                 this.container.appendChild(folderTreeSplitter);

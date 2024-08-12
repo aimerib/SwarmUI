@@ -433,16 +433,45 @@ function load_image_file(e) {
     }
 }
 
-function autoSelectWidth(elem) {
+// Create a reusable span element outside the function
+const measureSpan = document.createElement('span');
+measureSpan.style.visibility = 'hidden';
+measureSpan.style.position = 'absolute';
+measureSpan.style.whiteSpace = 'nowrap';
+document.body.appendChild(measureSpan);
+
+// Create a performance-optimized debounce function
+function debounceCalls(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+
+// Optimized autoSelectWidth function
+const autoSelectWidth = debounceCalls((elem) => {
     if (elem.classList.contains('nogrow')) {
         return;
     }
-    let span = document.createElement('span');
-    span.innerText = elem.selectedOptions[0] ? elem.selectedOptions[0].innerText : elem.value;
-    document.body.appendChild(span);
-    let width = Math.max(50, span.offsetWidth + 30);
-    elem.style.width = `${width}px`;
-    span.remove();
+
+    const text = elem.selectedOptions[0] ? elem.selectedOptions[0].innerText : elem.value;
+    measureSpan.textContent = text;
+
+    const width = Math.max(50, measureSpan.offsetWidth + 30);
+
+    if (elem.style.width !== `${width}px`) {
+        elem.style.width = `${width}px`;
+    }
+}, 100);  // Adjust the debounce delay as needed
+
+// Clean up function to remove the measureSpan when it's no longer needed
+function cleanUpMeasureSpan() {
+    document.body.removeChild(measureSpan);
 }
 
 function autoNumberWidth(elem) {

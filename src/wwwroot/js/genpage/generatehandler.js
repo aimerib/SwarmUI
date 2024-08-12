@@ -50,9 +50,6 @@ class GenerateHandler {
 
     doInterrupt(allSessions = false) {
         this.interrupted = this.batchesEver;
-        if(isLikelyMobile()){
-            document.getElementById('alt_prompt_region').scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
         doInterrupt(allSessions);
     }
 
@@ -91,9 +88,6 @@ class GenerateHandler {
             delete input_overrides['_preview'];
         }
         this.beforeGenRun();
-        if(isLikelyMobile()){
-            document.getElementById("current_image_batch").scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
         let run = () => {
             this.resetBatchIfNeeded();
             let images = {};
@@ -147,9 +141,6 @@ class GenerateHandler {
                         }
                         discardable[data.batch_index] = images[data.batch_index];
                         delete images[data.batch_index];
-                        if(isLikelyMobile()){
-                            document.getElementById('current_image').scrollIntoView({ behavior: 'smooth', block: 'start' });
-                        }
                     }
                 }
                 if (data.gen_progress) {

@@ -9,6 +9,8 @@
 // Constants
 const LONG_PRESS_DURATION = 500; // milliseconds
 
+let vh = window.innerHeight * 0.01;
+
 // Cache frequently accessed DOM elements for better performance
 const inputSidebar = document.getElementById("input_sidebar");
 const simpleInputSidebar = document.getElementById("simple_input_sidebar");
@@ -53,14 +55,6 @@ const addMultipleEventListeners = (element, events, handler) => {
  * @param {HTMLElement} element - The element to toggle
  */
 const toggleElement = (element) => {
-    // element.classList.toggle("closed");
-    // element.style.display = element.classList.contains("closed")? "none !important" : "block !important";
-    // element.style.height = element.classList.contains("closed")? "0 !important" : "100% !important";
-
-    // element.style.cssText = element.classList.contains("closed")
-    //     ? "height: 0px !important; display: none !important;"
-    //     : "height: 100% !important; display: block !important;";
-
     element.classList.toggle("closed");
     element.style.height = element.classList.contains("closed")
         ? "0px"
@@ -68,6 +62,7 @@ const toggleElement = (element) => {
     element.style.display = element.classList.contains("closed")
         ? "none !important"
         : "block !important";
+    element.style.paddingBottom = element.classList.contains("closed")? "0px" : "150px";
 };
 
 // Convenience functions for toggling specific elements
@@ -99,85 +94,85 @@ const backToTop = () => {
     ).scrollTo({ top: 0, behavior: "smooth" });
 };
 
-/**
- * Creates the mobile menu structure
- * @returns {HTMLElement} - The created mobile menu element
- */
-const createMobileMenu = () => {
-    const menu = document.createElement("div");
-    menu.className = "mobile-menu";
-    menu.innerHTML = `
-        <div class="mobile-menu-buttons">
-            <button data-action="toggleInputSidebar">Inputs</button>
-            <button data-action="toggleBottomBar">Extras</button>
-            <button data-action="showOptions">Options</button>
-            <button data-action="interrupt">Interrupt</button>
-            <button data-action="backToTop">Top</button>
-        </div>
-    `;
-    menu.querySelectorAll("button").forEach((button) => {
-        handleAction(button, () => {
-            const action = button.dataset.action;
-            if (action) {
-                switch (action) {
-                    case "toggleInputSidebar":
-                        toggleInputSidebar();
-                        updateFlyoutZIndex("input_sidebar");
-                        break;
-                    case "toggleBottomBar":
-                        toggleBottomBar();
-                        updateFlyoutZIndex("t2i_bottom_bar");
-                        break;
-                    case "showOptions":
-                        doPopover("generate_center");
-                        break;
-                    case "interrupt":
-                        mainGenHandler.doInterrupt();
-                        break;
-                    case "backToTop":
-                        backToTop();
-                        break;
-                }
-            }
-            menu.parentElement.removeChild(menu);
-        });
-    });
-    return menu;
-};
+// /**
+//  * Creates the mobile menu structure
+//  * @returns {HTMLElement} - The created mobile menu element
+//  */
+// const createMobileMenu = () => {
+//     const menu = document.createElement("div");
+//     menu.className = "mobile-menu";
+//     menu.innerHTML = `
+//         <div class="mobile-menu-buttons">
+//             <button data-action="toggleInputSidebar">Inputs</button>
+//             <button data-action="toggleBottomBar">Extras</button>
+//             <button data-action="showOptions">Options</button>
+//             <button data-action="interrupt">Interrupt</button>
+//             <button data-action="backToTop">Top</button>
+//         </div>
+//     `;
+//     menu.querySelectorAll("button").forEach((button) => {
+//         handleAction(button, () => {
+//             const action = button.dataset.action;
+//             if (action) {
+//                 switch (action) {
+//                     case "toggleInputSidebar":
+//                         toggleInputSidebar();
+//                         updateFlyoutZIndex("input_sidebar");
+//                         break;
+//                     case "toggleBottomBar":
+//                         toggleBottomBar();
+//                         updateFlyoutZIndex("t2i_bottom_bar");
+//                         break;
+//                     case "showOptions":
+//                         doPopover("generate_center");
+//                         break;
+//                     case "interrupt":
+//                         mainGenHandler.doInterrupt();
+//                         break;
+//                     case "backToTop":
+//                         backToTop();
+//                         break;
+//                 }
+//             }
+//             menu.parentElement.removeChild(menu);
+//         });
+//     });
+//     return menu;
+// };
 
-/**
- * Displays the mobile menu
- */
-const showMobileMenu = () => {
-    const menu = createMobileMenu();
-    const rect = genButtonMobile.getBoundingClientRect();
-    Object.assign(menu.style, {
-        position: "fixed",
-        left: `${rect.left - 70}px`,
-        top: `${rect.top - 260}px`,
-        zIndex: "1050",
-    });
+// /**
+//  * Displays the mobile menu
+//  */
+// const showMobileMenu = () => {
+//     const menu = createMobileMenu();
+//     const rect = genButtonMobile.getBoundingClientRect();
+//     Object.assign(menu.style, {
+//         position: "fixed",
+//         left: `${rect.left - 70}px`,
+//         top: `${rect.top - 200}px`,
+//         zIndex: "1050",
+//     });
 
-    document.body.appendChild(menu);
+//     document.body.appendChild(menu);
 
-    const closeMenu = (e) => {
-        if (menu && !menu.contains(e.target) && e.target !== genButtonMobile) {
-            if (menu.parentElement) menu.parentElement.removeChild(menu);
-            document.removeEventListener("click", closeMenu);
-            document.removeEventListener("touchstart", closeMenu);
-        }
-    };
+//     const closeMenu = (e) => {
+//         if (menu && !menu.contains(e.target) && e.target !== genButtonMobile) {
+//             if (menu.parentElement) menu.parentElement.removeChild(menu);
+//             document.removeEventListener("click", closeMenu);
+//             document.removeEventListener("touchstart", closeMenu);
+//         }
+//     };
 
-    setTimeout(
-        () =>
-            addMultipleEventListeners(
-                document,
-                ["click", "touchstart"],
-                closeMenu
-            ),
-        0
-    );
-};
+//     setTimeout(
+//         () =>
+//             addMultipleEventListeners(
+//                 document,
+//                 ["click", "touchstart"],
+//                 closeMenu
+//             ),
+//         0
+//     );
+// };
 
 /**
  * Handles user actions on mobile, including long press detection
@@ -190,7 +185,13 @@ const handleAction = (element, handler, isLongPressEnabled = false) => {
     let hasMoved = false;
     let longPressTimer;
 
-    const touchStart = () => {
+    /**
+    * Handles user actions on mobile, including long press detection
+    * @param {TouchEvent} e - The payload sent by the touch event
+    */
+    const touchStart = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
         touchStartTime = Date.now();
         hasMoved = false;
         if (isLongPressEnabled) {
@@ -205,6 +206,10 @@ const handleAction = (element, handler, isLongPressEnabled = false) => {
         }
     };
 
+    /**
+    * Handles user actions on mobile, including long press detection
+    * @param {TouchEvent} e - The payload sent by the touch event
+    */
     const touchEnd = (e) => {
         if (isLongPressEnabled) {
             clearTimeout(longPressTimer);
@@ -215,7 +220,7 @@ const handleAction = (element, handler, isLongPressEnabled = false) => {
     };
 
     if ("ontouchstart" in window) {
-        element.addEventListener("touchstart", touchStart, { passive: true });
+        element.addEventListener("touchstart", touchStart);
         element.addEventListener("touchmove", touchMove, { passive: true });
         element.addEventListener("touchend", touchEnd);
     } else {
@@ -283,6 +288,9 @@ const setupMobileUI = () => {
     setupFlyout(inputSidebar, toggleInputSidebar);
     setupBackToTopButton();
     setupGenButtonMobile();
+    // This is a hack needed for iOS to ensure correct viewport sizing accounting for the address bottom bar
+    setupMobileViewHeight();
+    setupNavigationDrawer();
     // setupMobileCurrentImageExtras();
     setupCopyrightMessage();
 };
@@ -294,21 +302,21 @@ const setupMobileUI = () => {
  */
 const setupFlyout = (element, toggleFunction) => {
     element.classList.add("mobile-flyout", "closed");
-    const dragArea = document.createElement("div");
-    dragArea.innerHTML = "&#9660;";
-    Object.assign(dragArea.style, {
-        width: "100%",
-        height: "30px",
-        backgroundColor: "#2a2a2a",
-        textAlign: "center",
-        lineHeight: "30px",
-        color: "var(--emphasis)",
-        cursor: "pointer",
-        borderBottom: "1px solid #3a3a3a",
-        transition: "all 0.3s ease",
-    });
-    handleAction(dragArea, toggleFunction);
-    element.insertBefore(dragArea, element.firstChild);
+    // const dragArea = document.createElement("div");
+    // dragArea.innerHTML = "&#9660;";
+    // Object.assign(dragArea.style, {
+    //     width: "100%",
+    //     height: "30px",
+    //     backgroundColor: "#2a2a2a",
+    //     textAlign: "center",
+    //     lineHeight: "30px",
+    //     color: "var(--emphasis)",
+    //     cursor: "pointer",
+    //     borderBottom: "1px solid #3a3a3a",
+    //     transition: "all 0.3s ease",
+    // });
+    // handleAction(dragArea, toggleFunction);
+    // element.insertBefore(dragArea, element.firstChild);
     styleElement(element);
 };
 
@@ -338,7 +346,8 @@ const styleElement = (element) => {
         boxShadow: "rgba(0, 255, 255, 0.1) 0px -5px 15px",
         color: "rgb(255, 255, 255)",
         position: "absolute",
-        bottom: "0px",
+        // paddingBottom: "70px",
+        top: 0,
         overflowY: "auto",
         maxWidth: "100vw",
         overflowX: "hidden",
@@ -409,6 +418,15 @@ const setupMobileCurrentImageExtras = () => {
     }
 };
 
+function setupMobileViewHeight() {
+    document.documentElement.style.setProperty('--vh', `${vh}px`);
+
+    window.addEventListener('resize', () => {
+        let vh = window.innerHeight * 0.01;
+        document.documentElement.style.setProperty('--vh', `${vh}px`);
+    });
+}
+
 function setupCopyrightMessage() {
     const mainImageArea = document.getElementById("main_image_area");
     if (mainImageArea) {
@@ -430,3 +448,149 @@ function setupCopyrightMessage() {
         mainImageArea.appendChild(cheekyLink);
     }
 }
+
+function setupNavigationDrawer () {
+    const drawerHTML = `
+        <div id="mobile-nav-drawer" class="mobile-nav-drawer">
+            <div class="drawer-handle">
+                <div class="drawer-icon">
+                    <i class="bi bi-chevron-compact-up"></i>
+                </div>
+            </div>
+            <nav class="drawer-content">
+                <button data-action="toggleInputSidebar">Inputs</button>
+                <button data-action="toggleBottomBar">Extras</button>
+                <button data-action="showOptions">Options</button>
+                <button data-action="interrupt">Interrupt</button>
+                <button data-action="backToTop">Top</button>
+            </nav>
+        </div>
+    `;
+
+    document.body.insertAdjacentHTML('beforeend', drawerHTML);
+
+    const drawer = document.getElementById('mobile-nav-drawer');
+    Object.assign(drawer.style, {
+        position: 'fixed',
+        bottom: '0',
+        left: '0',
+        width: '100%',
+        backgroundColor: '#2a2a2a',
+        transition: 'transform 0.3s ease-out',
+        transform: 'translateY(calc(100% - 50px))',
+        zIndex: '1000'
+    });
+
+    drawer.querySelectorAll("button").forEach((button) => {
+        handleAction(button, () => {
+            const action = button.dataset.action;
+            if (action) {
+                switch (action) {
+                    case "toggleInputSidebar":
+                        toggleInputSidebar();
+                        updateFlyoutZIndex("input_sidebar");
+                        drawer?.classList.toggle('open');
+                        drawer?.classList.contains('open')? drawer.style.transform = 'translateY(calc(100% + -170px))' : drawer.style.transform = 'translateY(calc(100% - 50px))';
+                        updateDrawerIcon('flyout-open');
+                        break;
+                    case "toggleBottomBar":
+                        toggleBottomBar();
+                        updateFlyoutZIndex("t2i_bottom_bar");
+                        drawer?.classList.toggle('open');
+                        drawer?.classList.contains('open')? drawer.style.transform = 'translateY(calc(100% + -170px))' : drawer.style.transform = 'translateY(calc(100% - 50px))';
+                        updateDrawerIcon('flyout-open');
+                        break;
+                    case "showOptions":
+                        doPopover("generate_center");
+                        drawer?.classList.toggle('open');
+                        drawer?.classList.contains('open')? drawer.style.transform = 'translateY(calc(100% + -170px))' : drawer.style.transform = 'translateY(calc(100% - 50px))';
+                        updateDrawerIcon('closed');
+                        break;
+                    case "interrupt":
+                        mainGenHandler.doInterrupt();
+                        drawer?.classList.toggle('open');
+                        drawer?.classList.contains('open')? drawer.style.transform = 'translateY(calc(100% + -170px))' : drawer.style.transform = 'translateY(calc(100% - 50px))';
+                        updateDrawerIcon('closed');
+                        break;
+                    case "backToTop":
+                        backToTop();
+                        drawer?.classList.toggle('open');
+                        drawer?.classList.contains('open')? drawer.style.transform = 'translateY(calc(100% + -170px))' : drawer.style.transform = 'translateY(calc(100% - 50px))';
+                        updateDrawerIcon('closed');
+                        break;
+                }
+            }
+            // menu.parentElement.removeChild(menu);
+        });
+    });
+
+    const handle = drawer.querySelector('.drawer-handle');
+    Object.assign(handle.style, {
+        height: '50px',
+        backgroundColor: '#2a2a2a',
+        borderTopLeftRadius: '20px',
+        borderTopRightRadius: '20px',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        cursor: 'pointer'
+    });
+
+    const icon = handle.querySelector('.drawer-icon');
+    Object.assign(icon.style, {
+        width: '50px',
+        height: '50px',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        fontSize: '24px',
+        color: '#fff',
+        transition: 'transform 0.3s ease'
+    });
+
+    const content = drawer.querySelector('.drawer-content');
+    Object.assign(content.style, {
+        padding: '20px',
+        maxHeight: 'calc(30dvh - 50px)',
+        overflowY: 'auto'
+    });
+    document.body.insertAdjacentHTML('beforeend', drawerHTML);
+    handleAction(handle, () => {
+        console.log('Drawer handle clicked');
+        const bottomBar = document.getElementById('t2i_bottom_bar');
+        const inputSidebar = document.getElementById('input_sidebar');
+
+        if (!bottomBar?.classList.contains('closed') || !inputSidebar?.classList.contains('closed')) {
+            console.log('Closing open flyouts');
+            if (!bottomBar?.classList.contains('closed')) {
+                toggleBottomBar();
+            }
+            if (!inputSidebar?.classList.contains('closed')) {
+                toggleInputSidebar();
+            }
+            drawer.style.transform = 'translateY(calc(100% - 50px))';
+            drawer.classList.remove('open');
+            updateDrawerIcon('closed');
+        } else {
+            console.log('Toggling drawer');
+            drawer.classList.toggle('open');
+            if (drawer.classList.contains('open')) {
+                drawer.style.transform = 'translateY(calc(100% + -170px))';
+                updateDrawerIcon('open');
+            } else {
+                drawer.style.transform = 'translateY(calc(100% - 50px))';
+                updateDrawerIcon('closed');
+            }
+        }
+    });
+}
+
+const updateDrawerIcon = (currState) => {
+    const drawerStates = {
+        'flyout-open': 'bi bi-x',
+        'open': 'bi bi-chevron-compact-down',
+        'closed': 'bi bi-chevron-compact-up'
+    }
+    const icon = document.querySelector('#mobile-nav-drawer .drawer-icon i');
+    icon.className = drawerStates[currState];
+};

@@ -431,7 +431,9 @@ const setupMobileCurrentImageExtras = () => {
         isUpdatingExtras = false;
         return;
     }
-    debounce(extrasWrapper.classList.add("closed"), 100);
+    if (!extrasWrapper.classList.contains('open')) {
+        extrasWrapper.classList.add("closed");
+    }
 
     if (!current_image.querySelector("#mobile_expand_indicator")) {
         let newExpandIndicator = document.createElement("div");
@@ -439,10 +441,9 @@ const setupMobileCurrentImageExtras = () => {
         newExpandIndicator.className = "mobile-expand-indicator";
         newExpandIndicator.textContent = "▼ More Info";
         handleAction(newExpandIndicator, function () {
+            extrasWrapper.classList.toggle("open");
             extrasWrapper.classList.toggle("closed");
-            newExpandIndicator.textContent = extrasWrapper.classList.contains(
-                "closed"
-            )
+            newExpandIndicator.textContent = extrasWrapper.classList.contains("open")
                 ? "▲ Less Info"
                 : "▼ More Info";
         });

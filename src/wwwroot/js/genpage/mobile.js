@@ -19,7 +19,6 @@ const tabContent = document.querySelector(".tab-content");
 const mobileTabSelector = document.getElementById("mobile_tab_selector");
 const genButtonMobile = document.getElementById("alt_generate_button_mobile");
 const expandIndicator = document.getElementById("mobile_expand_indicator");
-const extrasWrapper = document.getElementById("current_image_extras_wrapper");
 
 /**
  * Mobile Detection Functions
@@ -62,7 +61,9 @@ const toggleElement = (element) => {
     element.style.display = element.classList.contains("closed")
         ? "none !important"
         : "block !important";
-    element.style.paddingBottom = element.classList.contains("closed")? "0px" : "150px";
+    element.style.paddingBottom = element.classList.contains("closed")
+        ? "0px"
+        : "150px";
 };
 
 // Convenience functions for toggling specific elements
@@ -186,9 +187,9 @@ const handleAction = (element, handler, isLongPressEnabled = false) => {
     let longPressTimer;
 
     /**
-    * Handles user actions on mobile, including long press detection
-    * @param {TouchEvent} e - The payload sent by the touch event
-    */
+     * Handles user actions on mobile, including long press detection
+     * @param {TouchEvent} e - The payload sent by the touch event
+     */
     const touchStart = (e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -207,9 +208,9 @@ const handleAction = (element, handler, isLongPressEnabled = false) => {
     };
 
     /**
-    * Handles user actions on mobile, including long press detection
-    * @param {TouchEvent} e - The payload sent by the touch event
-    */
+     * Handles user actions on mobile, including long press detection
+     * @param {TouchEvent} e - The payload sent by the touch event
+     */
     const touchEnd = (e) => {
         if (isLongPressEnabled) {
             clearTimeout(longPressTimer);
@@ -404,26 +405,91 @@ initializeMobileUI();
 if (isIOS()) {
     disableIosTextFieldZoom();
 }
+let isUpdatingExtras = false;
+
 const setupMobileCurrentImageExtras = () => {
-    if (expandIndicator && extrasWrapper) {
-        handleAction(expandIndicator, function () {
-            extrasWrapper.classList.toggle("expanded");
-            expandIndicator.classList.toggle("hidden");
-            if (extrasWrapper.classList.contains("expanded")) {
-                expandIndicator.textContent = "▲ Less Info";
-            } else {
-                expandIndicator.textContent = "▼ More Info";
-            }
-        });
+    console.log("Setting up mobile current image extras");
+    if (isUpdatingExtras) return;
+    isUpdatingExtras = true;
+
+    const current_image = document.getElementById("current_image");
+    if (!current_image) return;
+
+    // Create or get the wrapper
+    // wrapper = document.createElement('div');
+    // wrapper.className = 'main-image-wrapper';
+    // mainImageArea.appendChild(wrapper);
+
+    // Create and add the expand indicator
+
+    // Add the extras wrapper
+    const extrasWrapper = document.getElementById(
+        "current-image-extras-wrapper"
+    );
+
+    if (!extrasWrapper) {
+        isUpdatingExtras = false;
+        return;
     }
+    debounce(extrasWrapper.classList.add("closed"), 100);
+
+    if (!current_image.querySelector("#mobile_expand_indicator")) {
+        let newExpandIndicator = document.createElement("div");
+        newExpandIndicator.id = "mobile_expand_indicator";
+        newExpandIndicator.className = "mobile-expand-indicator";
+        newExpandIndicator.textContent = "▼ More Info";
+        handleAction(newExpandIndicator, function () {
+            extrasWrapper.classList.toggle("closed");
+            newExpandIndicator.textContent = extrasWrapper.classList.contains(
+                "closed"
+            )
+                ? "▲ Less Info"
+                : "▼ More Info";
+        });
+        current_image.appendChild(newExpandIndicator);
+    }
+
+    current_image.appendChild(extrasWrapper);
+    // Set up the toggle action
+    handleAction(expandIndicator, function () {
+        extrasWrapper.classList.toggle("closed");
+        expandIndicator.textContent = extrasWrapper.classList.contains("closed")
+            ? "▲ Less Info"
+            : "▼ More Info";
+    });
+
+    // // Move the main content into the wrapper
+    // Array.from(mainImageArea.children).forEach(child => {
+    //     if (child !== wrapper) {
+    //         wrapper.insertBefore(child, wrapper.lastChild);
+    //     }
+    // });
+
+    isUpdatingExtras = false;
 };
 
-function setupMobileViewHeight() {
-    document.documentElement.style.setProperty('--vh', `${vh}px`);
+const currentImage = document.getElementById("current_image");
 
-    window.addEventListener('resize', () => {
+if (currentImage) {
+    currentImage.addEventListener(
+        "DOMNodeInserted",
+        setupMobileCurrentImageExtras
+    );
+    // const observer = new MutationObserver(() => {
+    //     if (!isUpdatingExtras) {
+    //         setupMobileCurrentImageExtras();
+    //     }
+    // });
+
+    // observer.observe(mainImageArea, { childList: true, subtree: true });
+}
+
+function setupMobileViewHeight() {
+    document.documentElement.style.setProperty("--vh", `${vh}px`);
+
+    window.addEventListener("resize", () => {
         let vh = window.innerHeight * 0.01;
-        document.documentElement.style.setProperty('--vh', `${vh}px`);
+        document.documentElement.style.setProperty("--vh", `${vh}px`);
     });
 }
 
@@ -449,7 +515,7 @@ function setupCopyrightMessage() {
     }
 }
 
-function setupNavigationDrawer () {
+function setupNavigationDrawer() {
     const drawerHTML = `
         <div id="mobile-nav-drawer" class="mobile-nav-drawer">
             <div class="drawer-handle">
@@ -467,18 +533,18 @@ function setupNavigationDrawer () {
         </div>
     `;
 
-    document.body.insertAdjacentHTML('beforeend', drawerHTML);
+    document.body.insertAdjacentHTML("beforeend", drawerHTML);
 
-    const drawer = document.getElementById('mobile-nav-drawer');
+    const drawer = document.getElementById("mobile-nav-drawer");
     Object.assign(drawer.style, {
-        position: 'fixed',
-        bottom: '0',
-        left: '0',
-        width: '100%',
-        backgroundColor: '#2a2a2a',
-        transition: 'transform 0.3s ease-out',
-        transform: 'translateY(calc(100% - 50px))',
-        zIndex: '1000'
+        position: "fixed",
+        bottom: "0",
+        left: "0",
+        width: "100%",
+        backgroundColor: "#2a2a2a",
+        transition: "transform 0.3s ease-out",
+        transform: "translateY(calc(100% - 50px))",
+        zIndex: "1000",
     });
 
     drawer.querySelectorAll("button").forEach((button) => {
@@ -489,34 +555,54 @@ function setupNavigationDrawer () {
                     case "toggleInputSidebar":
                         toggleInputSidebar();
                         updateFlyoutZIndex("input_sidebar");
-                        drawer?.classList.toggle('open');
-                        drawer?.classList.contains('open')? drawer.style.transform = 'translateY(calc(100% + -170px))' : drawer.style.transform = 'translateY(calc(100% - 50px))';
-                        updateDrawerIcon('flyout-open');
+                        drawer?.classList.toggle("open");
+                        drawer?.classList.contains("open")
+                            ? (drawer.style.transform =
+                                  "translateY(calc(100% + -170px))")
+                            : (drawer.style.transform =
+                                  "translateY(calc(100% - 50px))");
+                        updateDrawerIcon("flyout-open");
                         break;
                     case "toggleBottomBar":
                         toggleBottomBar();
                         updateFlyoutZIndex("t2i_bottom_bar");
-                        drawer?.classList.toggle('open');
-                        drawer?.classList.contains('open')? drawer.style.transform = 'translateY(calc(100% + -170px))' : drawer.style.transform = 'translateY(calc(100% - 50px))';
-                        updateDrawerIcon('flyout-open');
+                        drawer?.classList.toggle("open");
+                        drawer?.classList.contains("open")
+                            ? (drawer.style.transform =
+                                  "translateY(calc(100% + -170px))")
+                            : (drawer.style.transform =
+                                  "translateY(calc(100% - 50px))");
+                        updateDrawerIcon("flyout-open");
                         break;
                     case "showOptions":
                         doPopover("generate_center");
-                        drawer?.classList.toggle('open');
-                        drawer?.classList.contains('open')? drawer.style.transform = 'translateY(calc(100% + -170px))' : drawer.style.transform = 'translateY(calc(100% - 50px))';
-                        updateDrawerIcon('closed');
+                        drawer?.classList.toggle("open");
+                        drawer?.classList.contains("open")
+                            ? (drawer.style.transform =
+                                  "translateY(calc(100% + -170px))")
+                            : (drawer.style.transform =
+                                  "translateY(calc(100% - 50px))");
+                        updateDrawerIcon("closed");
                         break;
                     case "interrupt":
                         mainGenHandler.doInterrupt();
-                        drawer?.classList.toggle('open');
-                        drawer?.classList.contains('open')? drawer.style.transform = 'translateY(calc(100% + -170px))' : drawer.style.transform = 'translateY(calc(100% - 50px))';
-                        updateDrawerIcon('closed');
+                        drawer?.classList.toggle("open");
+                        drawer?.classList.contains("open")
+                            ? (drawer.style.transform =
+                                  "translateY(calc(100% + -170px))")
+                            : (drawer.style.transform =
+                                  "translateY(calc(100% - 50px))");
+                        updateDrawerIcon("closed");
                         break;
                     case "backToTop":
                         backToTop();
-                        drawer?.classList.toggle('open');
-                        drawer?.classList.contains('open')? drawer.style.transform = 'translateY(calc(100% + -170px))' : drawer.style.transform = 'translateY(calc(100% - 50px))';
-                        updateDrawerIcon('closed');
+                        drawer?.classList.toggle("open");
+                        drawer?.classList.contains("open")
+                            ? (drawer.style.transform =
+                                  "translateY(calc(100% + -170px))")
+                            : (drawer.style.transform =
+                                  "translateY(calc(100% - 50px))");
+                        updateDrawerIcon("closed");
                         break;
                 }
             }
@@ -524,62 +610,65 @@ function setupNavigationDrawer () {
         });
     });
 
-    const handle = drawer.querySelector('.drawer-handle');
+    const handle = drawer.querySelector(".drawer-handle");
     Object.assign(handle.style, {
-        height: '50px',
-        backgroundColor: '#2a2a2a',
-        borderTopLeftRadius: '20px',
-        borderTopRightRadius: '20px',
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        cursor: 'pointer'
+        height: "50px",
+        backgroundColor: "#2a2a2a",
+        borderTopLeftRadius: "20px",
+        borderTopRightRadius: "20px",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        cursor: "pointer",
     });
 
-    const icon = handle.querySelector('.drawer-icon');
+    const icon = handle.querySelector(".drawer-icon");
     Object.assign(icon.style, {
-        width: '50px',
-        height: '50px',
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        fontSize: '24px',
-        color: '#fff',
-        transition: 'transform 0.3s ease'
+        width: "50px",
+        height: "50px",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        fontSize: "24px",
+        color: "#fff",
+        transition: "transform 0.3s ease",
     });
 
-    const content = drawer.querySelector('.drawer-content');
+    const content = drawer.querySelector(".drawer-content");
     Object.assign(content.style, {
-        padding: '20px',
-        maxHeight: 'calc(30dvh - 50px)',
-        overflowY: 'auto'
+        padding: "20px",
+        maxHeight: "calc(30dvh - 50px)",
+        overflowY: "auto",
     });
-    document.body.insertAdjacentHTML('beforeend', drawerHTML);
+    document.body.insertAdjacentHTML("beforeend", drawerHTML);
     handleAction(handle, () => {
-        console.log('Drawer handle clicked');
-        const bottomBar = document.getElementById('t2i_bottom_bar');
-        const inputSidebar = document.getElementById('input_sidebar');
+        console.log("Drawer handle clicked");
+        const bottomBar = document.getElementById("t2i_bottom_bar");
+        const inputSidebar = document.getElementById("input_sidebar");
 
-        if (!bottomBar?.classList.contains('closed') || !inputSidebar?.classList.contains('closed')) {
-            console.log('Closing open flyouts');
-            if (!bottomBar?.classList.contains('closed')) {
+        if (
+            !bottomBar?.classList.contains("closed") ||
+            !inputSidebar?.classList.contains("closed")
+        ) {
+            console.log("Closing open flyouts");
+            if (!bottomBar?.classList.contains("closed")) {
                 toggleBottomBar();
             }
-            if (!inputSidebar?.classList.contains('closed')) {
+            if (!inputSidebar?.classList.contains("closed")) {
                 toggleInputSidebar();
             }
-            drawer.style.transform = 'translateY(calc(100% - 50px))';
-            drawer.classList.remove('open');
-            updateDrawerIcon('closed');
+            drawer.style.transform = "translateY(calc(100% - 50px))";
+            drawer.classList.remove("open");
+            updateDrawerIcon("closed");
         } else {
-            console.log('Toggling drawer');
-            drawer.classList.toggle('open');
-            if (drawer.classList.contains('open')) {
-                drawer.style.transform = 'translateY(calc(100% + -170px))';
-                updateDrawerIcon('open');
+            console.log("Toggling drawer");
+            drawer.classList.toggle("open");
+            if (drawer.classList.contains("open")) {
+                drawer.style.transform = "translateY(calc(100% + -170px))";
+                updateDrawerIcon("open");
             } else {
-                drawer.style.transform = 'translateY(calc(100% - 50px))';
-                updateDrawerIcon('closed');
+                drawer.style.transform = "translateY(calc(100% - 50px))";
+                updateDrawerIcon("closed");
             }
         }
     });
@@ -587,10 +676,10 @@ function setupNavigationDrawer () {
 
 const updateDrawerIcon = (currState) => {
     const drawerStates = {
-        'flyout-open': 'bi bi-x',
-        'open': 'bi bi-chevron-compact-down',
-        'closed': 'bi bi-chevron-compact-up'
-    }
-    const icon = document.querySelector('#mobile-nav-drawer .drawer-icon i');
+        "flyout-open": "bi bi-x",
+        open: "bi bi-chevron-compact-down",
+        closed: "bi bi-chevron-compact-up",
+    };
+    const icon = document.querySelector("#mobile-nav-drawer .drawer-icon i");
     icon.className = drawerStates[currState];
 };

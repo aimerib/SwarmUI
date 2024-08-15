@@ -1470,7 +1470,7 @@ function pageSizer() {
             if (!isLikelyMobile()) inputSidebar.style.height = `calc(100vh - ${fixed})`;
             mainInputsAreaWrapper.style.height = `calc(100vh - ${fixed})`;
             mainImageArea.style.height = `calc(100vh - ${fixed})`;
-            currentImage.style.height = `calc(100vh - ${fixed} - ${altHeight})`;
+            currentImage.style.height = `calc(94vh - ${fixed} - ${altHeight})`;
             imageEditor.inputDiv.style.height = `calc(100vh - ${fixed} - ${altHeight})`;
             editorSizebar.style.height = `calc(100vh - ${fixed} - ${altHeight})`;
             currentImageBatch.style.height = `calc(100vh - ${fixed})`;

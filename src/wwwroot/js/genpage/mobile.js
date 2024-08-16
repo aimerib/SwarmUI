@@ -250,6 +250,7 @@ const disableIosTextFieldZoom = () => {
  */
 const initializeMobileUI = () => {
     setupTabSelector();
+    watchForClassAndHideModalTags();
     if (isLikelyMobile()) {
         setupMobileUI();
     }
@@ -405,6 +406,24 @@ initializeMobileUI();
 if (isIOS()) {
     disableIosTextFieldZoom();
 }
+function watchForClassAndHideModalTags() {
+    const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+            if (mutation.type === 'childList') {
+                mutation.addedNodes.forEach((node) => {
+                    if (node.nodeType === Node.ELEMENT_NODE && node.classList.contains("imageview_modal_inner_div")) {
+                        const imageviewModalInnerDiv = document.querySelector(".imageview_modal_inner_div");
+                        if (imageviewModalInnerDiv) {
+                            imageviewModalInnerDiv.lastElementChild.style.display = "none";
+                        }
+                    }
+                });
+            }
+        });
+    });
+
+    observer.observe(document.body, { childList: true, subtree: true });
+}
 let isUpdatingExtras = false;
 
 const setupMobileCurrentImageExtras = () => {
@@ -415,13 +434,6 @@ const setupMobileCurrentImageExtras = () => {
     const current_image = document.getElementById("current_image");
     if (!current_image) return;
 
-    // Create or get the wrapper
-    // wrapper = document.createElement('div');
-    // wrapper.className = 'main-image-wrapper';
-    // mainImageArea.appendChild(wrapper);
-
-    // Create and add the expand indicator
-
     // Add the extras wrapper
     const extrasWrapper = document.getElementById(
         "current-image-extras-wrapper"
@@ -431,7 +443,22 @@ const setupMobileCurrentImageExtras = () => {
         isUpdatingExtras = false;
         return;
     }
-    if (!extrasWrapper.classList.contains('open')) {
+    const currentImageData = extrasWrapper.querySelector(
+        ".current-image-data"
+    );
+
+    // Get all children of the parent element
+    if (currentImageData && currentImageData.children.length > 0) {
+        let children = currentImageData.querySelectorAll(':scope > *');
+
+        currentImageData.innerHTML = "";
+        children.forEach(function(item) {
+            currentImageData.appendChild(item);
+        });
+    }
+
+
+    if (!extrasWrapper.classList.contains("open")) {
         extrasWrapper.classList.add("closed");
     }
 
@@ -439,13 +466,16 @@ const setupMobileCurrentImageExtras = () => {
         let newExpandIndicator = document.createElement("div");
         newExpandIndicator.id = "mobile_expand_indicator";
         newExpandIndicator.className = "mobile-expand-indicator";
-        newExpandIndicator.textContent = "▼ More Info";
+        newExpandIndicator.textContent = "▲ More Info";
         handleAction(newExpandIndicator, function () {
             extrasWrapper.classList.toggle("open");
             extrasWrapper.classList.toggle("closed");
-            newExpandIndicator.textContent = extrasWrapper.classList.contains("open")
-                ? "▲ Less Info"
-                : "▼ More Info";
+            newExpandIndicator.classList.toggle("expanded");
+            newExpandIndicator.textContent = extrasWrapper.classList.contains(
+                "open"
+            )
+                ? "▼ Less Info"
+                : "▲ More Info";
         });
         current_image.appendChild(newExpandIndicator);
     }
@@ -454,17 +484,11 @@ const setupMobileCurrentImageExtras = () => {
     // Set up the toggle action
     handleAction(expandIndicator, function () {
         extrasWrapper.classList.toggle("closed");
+        expandIndicator.classList.toggle("expanded");
         expandIndicator.textContent = extrasWrapper.classList.contains("closed")
-            ? "▲ Less Info"
-            : "▼ More Info";
+            ? "▼ Less Info"
+            : "▲ More Info";
     });
-
-    // // Move the main content into the wrapper
-    // Array.from(mainImageArea.children).forEach(child => {
-    //     if (child !== wrapper) {
-    //         wrapper.insertBefore(child, wrapper.lastChild);
-    //     }
-    // });
 
     isUpdatingExtras = false;
 };
@@ -476,13 +500,6 @@ if (currentImage) {
         "DOMNodeInserted",
         setupMobileCurrentImageExtras
     );
-    // const observer = new MutationObserver(() => {
-    //     if (!isUpdatingExtras) {
-    //         setupMobileCurrentImageExtras();
-    //     }
-    // });
-
-    // observer.observe(mainImageArea, { childList: true, subtree: true });
 }
 
 function setupMobileViewHeight() {
@@ -546,6 +563,7 @@ function setupNavigationDrawer() {
         transition: "transform 0.3s ease-out",
         transform: "translateY(calc(100% - 50px))",
         zIndex: "1000",
+        boxShadow: "0px 8px 10px 1px hsla(0,0%,0%,0.14),0px 3px 14px 2px hsla(0,0%,0%,0.12),0px 5px 5px -3px hsla(0,0%,0%,0.2)",
     });
 
     drawer.querySelectorAll("button").forEach((button) => {

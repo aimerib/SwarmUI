@@ -32,7 +32,7 @@
 }
 
 .alt_prompt_main_line {
-  display: grid !important;
+  /* display: grid !important; */
   gap: 5px;
 }
 .alt_prompt_textbox, #alt_negativeprompt_textbox{

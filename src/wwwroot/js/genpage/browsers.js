@@ -100,6 +100,7 @@ class GenPageBrowserClass {
         this.currentPage = 1;
         this.totalPages = 0;
         this.initialLoadDone = false;
+        this.isNavigating = false;
     }
 
     updateTotalPages(files) {
@@ -190,18 +191,18 @@ class GenPageBrowserClass {
      * Updates/refreshes the browser view.
      */
     update(isRefresh = false, callback = null) {
+        console.log(this.folder, this.lastPath)
         this.updatePendingSince = new Date().getTime();
         if (isRefresh) {
             this.tree = new BrowserTreePart("", {}, false, null, null, "");
             this.contentDiv.scrollTop = 0;
         }
-        let folder = this.folder;
         this.listFoldersAndFiles(
-            folder,
+            this.folder,
             isRefresh,
             (folders, files) => {
                 this.updateTotalPages(files);
-                this.build(folder, folders, files);
+                this.build(this.folder, folders, files);
                 this.updatePendingSince = null;
                 if (callback) {
                     setTimeout(() => callback(), 100);
@@ -333,104 +334,120 @@ class GenPageBrowserClass {
     }
 
     buildMobileTreeElements(container, path, tree) {
+        // Clear existing content
         container.innerHTML = '';
 
-        let breadcrumbs = createEl('div', null, 'mobile-breadcrumbs');
-        let parts = path.split('/').filter(Boolean);
+        // Create header
+        const header = this.createHeader(path, tree);
+        container.appendChild(header);
 
+        // Create content container
+        const content = createDiv(null, 'mobile-file-browser-content');
+        container.appendChild(content);
 
-        // Add root
-        let rootCrumb = createEl('span', null, 'mobile-breadcrumb');
-        rootCrumb.textContent = 'Root';
-        rootCrumb.onclick = () => {
-            this.navigate('');
-            this.currentPage = 1;
+        // Populate content
+        this.populateMobileContent(content, path, tree);
+    }
+
+    createHeader(path, tree) {
+        console.log("Header for path:", path);
+        const header = createDiv(null, 'mobile-file-browser-header');
+
+        // Add back button if not at root
+        if (path !== '') {
+            const backButton = createSpan(null, 'mobile-file-browser-back');
+            backButton.innerHTML = '&larr;'; // Left arrow
+            backButton.onclick = () => this.navigateUp(path);
+            header.appendChild(backButton);
         }
-        breadcrumbs.appendChild(rootCrumb);
 
-        // Add path parts
-        let currentPath = '';
-        for (let part of parts) {
-            currentPath += part + '/';
-            let crumb = createEl('span', null, 'mobile-breadcrumb');
-            crumb.textContent = part;
-            crumb.onclick = (e) => {
-                clicker(e.target.dataset.issymbol, null);
-                this.refreshPagination();
-            };
-            tree.clickme = (callback) => {
-                clicker(false, callback);
-                this.refreshPagination();
-            };
-            // crumb.onclick = () => {
-            //     this.navigate(currentPath);
-            //     this.currentPage = 1;
-            // }
-            breadcrumbs.appendChild(createEl('span', null, 'mobile-breadcrumb-separator').textContent = ' > ');
-            breadcrumbs.appendChild(crumb);
-        }
-        container.appendChild(breadcrumbs);
+        // Add current folder name
+        const folderName = createSpan(null, 'mobile-file-browser-folder-name');
+        folderName.textContent = tree.name || 'Root';
+        header.appendChild(folderName);
 
-        // Current folder contents
-        let folderContents = createEl('ul', null, 'mobile-folder-contents');
-        // Special handling for root
-        if (path === '' || path === '/') {
-            for (let [name, subTree] of Object.entries(tree.children)) {
-                this.addFolderItem(folderContents, name, subTree, path);
-            }
-        } else {
-            // For non-root folders, add a "parent directory" option
-            this.addFolderItem(folderContents, '..', { fileData: null }, path, true);
+        return header;
+    }
 
-            let currentFolder = this.getFolderFromPath(tree, path);
-            if (currentFolder && currentFolder.children) {
-                for (let [name, subTree] of Object.entries(currentFolder.children)) {
-                    this.addFolderItem(folderContents, name, subTree, path);
+    populateMobileContent(container, path, tree) {
+        for (let [name, subTree] of Object.entries(tree.children)) {
+            const item = createDiv(null, 'mobile-file-browser-item');
+
+            const icon = createSpan(null, 'mobile-file-browser-icon');
+            icon.innerHTML = subTree.fileData ? '📄' : '📁'; // File or folder icon
+            item.appendChild(icon);
+
+            const itemName = createSpan(null, 'mobile-file-browser-item-name');
+            itemName.textContent = name;
+            item.appendChild(itemName);
+
+            item.onclick = () => {
+                if (subTree.fileData) {
+                    this.select(subTree.fileData, null);
+                } else {
+                    const newPath = path + name + '/';
+                    console.log('New Path:', newPath);
+                    this.debouncedNavigateMobile(newPath);
                 }
-            }
+            };
+            container.appendChild(item);
         }
-
-        container.appendChild(folderContents);
-
-        return container;
     }
 
-    addFolderItem(container, name, subTree, currentPath, isParentDirectory = false) {
-        let item = createEl('li', null, 'mobile-folder-item');
-        let icon = createEl('span', null, 'mobile-folder-icon');
-        icon.textContent = subTree.fileData ? '📄' : (isParentDirectory ? '📂' : '📁');
-        let label = createEl('span', null, 'mobile-folder-label');
-        label.textContent = name;
-
-        item.appendChild(icon);
-        item.appendChild(label);
-
-        item.onclick = () => {
-            if (isParentDirectory) {
-                let parentPath = currentPath.split('/').slice(0, -2).join('/') + '/';
-                this.navigate(parentPath);
-            } else if (subTree.fileData) {
-                this.select(subTree.fileData, null);
-            } else {
-                let newPath = currentPath + name + '/';
-                this.navigate(newPath);
-            }
-        };
-
-        container.appendChild(item);
+    navigateUp(currentPath) {
+        const parentPath = currentPath.split('/').slice(0, -2).join('/') + '/';
+        this.debouncedNavigateMobile(parentPath);
     }
+
+    navigateMobile(path, callback) {
+        if (this.isNavigating) return;
+        this.isNavigating = true;
+
+        let currentFolder = this.getFolderFromPath(this.tree, path);
+
+        // Fetch and build subtree if not already loaded
+        // if (currentFolder && !currentFolder.hasOpened) {
+            this.navigate(path, (folders, files) => {
+                folders = (folders && folders.length > 0) ? folders : [];
+                this.refillTree(path, folders, files);
+                currentFolder = this.getFolderFromPath(this.tree, path);
+                currentFolder.hasOpened = true;
+                this.buildMobileTreeElements(document.getElementById(`${this.id}-foldertree`), path, currentFolder);
+                this.build(path, [], folders, files);
+                if (callback) callback();
+                if (this.folderSelectedEvent) {
+                    this.folderSelectedEvent(path);
+                }
+                this.refreshPagination();
+            });
+        // } else {
+        //     // Rebuild the tree elements
+        //     this.buildMobileTreeElements(document.getElementById(`${this.id}-foldertree`), path, currentFolder);
+        //     if (callback) callback();
+        //     if (this.folderSelectedEvent) {
+        //         this.folderSelectedEvent(path);
+        //     }
+        //     this.refreshPagination();
+        // }
+        this.isNavigating = false;
+    }
+
+    debouncedNavigateMobile = debounce(this.navigateMobile.bind(this), 100);
 
     getFolderFromPath(tree, path) {
         console.log('getFolderFromPath', path, tree);
         let parts = path.split('/').filter(Boolean);
         let currentFolder = tree;
         for (let part of parts) {
+            console.log('Traversing:', part, 'Current folder:', currentFolder);
             if (currentFolder.children && currentFolder.children[part]) {
                 currentFolder = currentFolder.children[part];
             } else {
+                console.log('Path not found:', part);
                 return null; // Path not found
             }
         }
+        console.log('Final folder:', currentFolder);
         return currentFolder;
     }
 
@@ -438,9 +455,9 @@ class GenPageBrowserClass {
      * Builds the element view of the folder tree.
      */
     buildTreeElements(container, path, tree, offset = 16, isRoot = true) {
-        // if (isLikelyMobile()) {
-        //     return this.buildMobileTreeElements(container, path, tree);
-        // }
+        if (isLikelyMobile()) {
+            return this.buildMobileTreeElements(container, path, tree);
+        }
         if (isRoot) {
             let spacer = createDiv(null, "browser-folder-tree-spacer");
             spacer.style.height = this.folderTreeVerticalSpacing;
@@ -688,7 +705,7 @@ class GenPageBrowserClass {
         }
         const paginationControlsTop = this.renderPaginationControls();
         const paginationControlsBottom = this.renderPaginationControls();
-        if (container && this.totalPages > 1 && this.folder) {
+        if (container && this.totalPages > 1) {
             container.prepend(paginationControlsTop);
             container.appendChild(paginationControlsBottom);
         }
@@ -724,12 +741,6 @@ class GenPageBrowserClass {
                 subElem.remove();
             }
         }
-    }
-
-    getItemsForCurrentPage() {
-        const startIndex = (this.currentPage - 1) * this.itemsPerPage;
-        const endIndex = startIndex + this.itemsPerPage;
-        return this.items.slice(startIndex, endIndex);
     }
 
     renderPaginationControls() {
@@ -901,11 +912,11 @@ class GenPageBrowserClass {
         // Get items for the current page
         // const itemsToRender = this.getItemsForCurrentPage();
         let itemsToRender = [];
-        if (isLikelyMobile() && this.isBottomBarVisible() && path !== "") {
+        if (isLikelyMobile() && this.isBottomBarVisible()) {
             const start = (this.currentPage - 1) * this.itemsPerPage;
             const end = start + this.itemsPerPage;
             itemsToRender = files.slice(start, end);
-        } else if (!isLikelyMobile()) {
+        } else if (!isLikelyMobile()){
             itemsToRender = files;
         }
 

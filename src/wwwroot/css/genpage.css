@@ -1589,6 +1589,10 @@ body {
         padding: 1rem;
         background-color: rgba(0, 0, 0, 0.3);
         border-radius: 8px;
+        box-shadow: 0px 8px 10px 1px hsla(0,0%,0%,0.14),
+        0px 3px 14px 2px hsla(0,0%,0%,0.12),
+        0px 5px 5px -3px hsla(0,0%,0%,0.2);
+        margin-bottom: 0.7rem;
     }
 
     .current_image_batch {
@@ -1639,8 +1643,10 @@ body {
     .alt_prompt_main_line {
         flex-direction: column;
         gap: 15px;
-        align-items: center;
+        justify-items: center;
         padding-right: unset;
+        display: grid;
+        width: 100%;
     }
 
     .alt_prompt_buttons {
@@ -1662,6 +1668,15 @@ body {
         width: unset !important;
         height: unset !important;
         margin-bottom: 28px;
+        border-radius: 8px;
+        box-shadow: 0px 8px 10px 1px hsla(0,0%,0%,0.14),
+        0px 3px 14px 2px hsla(0,0%,0%,0.12),
+        0px 5px 5px -3px hsla(0,0%,0%,0.2);
+        border: 1px solid var(--light-border);
+        align-items: center;
+        flex-direction: column;
+        flex-grow: 1;
+        display: flex !important;
     }
 
     .browser-folder-tree-container {
@@ -1696,7 +1711,14 @@ body {
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         transition: transform 0.3s ease;
     }
-
+    .imageview_modal_inner_div{
+        min-height: 100vh;
+        display: grid;
+        align-items: center;
+        justify-content: center;
+        justify-items: center;
+        margin: unset;
+    }
     .image-block:hover {
         transform: scale(1.05);
     }
@@ -1731,15 +1753,19 @@ body {
         padding: 10px;
         font-size: 0.9rem;
     }
-
+    .imageview_popup_modal_background{
+        background-color: rgb(50, 50, 50, 0.95);
+    }
     .welcome_message {
         font-size: 1.2rem;
-        line-height: 1.4;
+        line-height: 1;
         padding: 1rem;
         border-radius: 8px;
         width: 90% !important;
-        max-width: 400px;
         margin: 0 auto;
+        transform: unset;
+        top: unset;
+        height: unset;
     }
 
     .imageview_popup_modal_undertext {
@@ -1784,6 +1810,9 @@ body {
         width: 60px;
         height: 60px;
         bottom: -7px !important;
+        box-shadow: 0px 8px 10px 1px hsla(0,0%,0%,0.14),
+        0px 3px 14px 2px hsla(0,0%,0%,0.12),
+        0px 5px 5px -3px hsla(0,0%,0%,0.2);
     }
 
     #alt_generate_button_mobile:active {
@@ -1815,6 +1844,9 @@ body {
         padding: 5px 10px;
         font-weight: bold;
         margin-bottom: 1rem;
+        box-shadow: 0px 8px 10px 1px hsla(0,0%,0%,0.14),
+        0px 3px 14px 2px hsla(0,0%,0%,0.12),
+        0px 5px 5px -3px hsla(0,0%,0%,0.2);
     }
 
     /* Scrollbar styling */
@@ -1911,11 +1943,13 @@ body {
     .t2i-top-bar {
         display: flex;
         flex-direction: column;
-        padding-bottom: 100px;
+        padding-bottom: 200px;
     }
 
     .current-image-data{
-        padding-inline: 10px;
+        padding-inline: 12px;
+        padding-bottom: 25px;
+        display: grid;
     }
     .input-sidebar,
     .main-image-area,
@@ -1929,12 +1963,15 @@ body {
 
     .main-image-area {
         order: 1;
+        padding: 6px;
     }
 
     .t2i-bottom-bar {
         order: 3;
     }
-
+    .batch-gear-button{
+        top: 0;
+    }
     .alt-text-tokencount-wrapper {
         width: 100%;
         left: unset !important;
@@ -1986,8 +2023,8 @@ body {
         bottom: 0;
         left: 0;
         right: 0;
-        background-color: rgba(0, 0, 0, 0.6);
-        color: white;
+
+
         text-align: center;
         padding: 5px;
         cursor: pointer;
@@ -1996,29 +2033,33 @@ body {
         transition: height 0.3s ease;
     }
 
-    .mobile-expand-indicator.hidden {
-        display: none;
+    .mobile-expand-indicator.expanded {
+        background-color: var(--emphasis) !important;
+        color: rgba(0, 0, 0, 0.8);
+    }
+    .mobile-expand-indicator:not(.expanded){
+        background-color: rgba(0, 0, 0, 0.6);
+        color: var(--emphasis);
     }
     #alt_prompt_extra_area {
         height: 0;
     }
 
     .imageview_modal_imagewrap {
-        margin-top: 45px;
         margin-bottom: 20px;
-        overflow: unset;
-        height: 54dvh;
-    }
-    .param_view_block {
-        max-width: 100%;
-        text-wrap: balance;
-        height: 100%;
-        overflow-y: auto;
-        display: inline;
+        display: flex;
+        height: unset;
     }
     .param_view_block > span {
         max-width: 100%;
-        text-wrap: balance;
+        height: auto;
+        overflow: visible;
+        line-break: auto;
+        overflow-wrap: break-word;
+        display: inline;
+        text-overflow: clip;
+        color: var(--text);
+        white-space: normal;
     }
     .imageview_popup_modal_undertext {
         display: flex;
@@ -2030,13 +2071,11 @@ body {
     }
     .imageview_popup_modal_img {
         border-radius: 10px;
-        margin-top: 10px;
-        border-radius: 10px;
         box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1),
             0 4px 6px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08),
             0 0 0 1px rgba(255, 255, 255, 0.05) inset,
             0 10px 20px rgba(0, 0, 0, 0.2);
-        padding: 2px;
+        padding: 12px;
         background: linear-gradient(145deg, #2a2a2a, #323232);
         position: relative;
         overflow: hidden;
@@ -2065,14 +2104,31 @@ body {
         height: 2rem !important;
         width: unset !important;
         top: 14px !important;
+        padding: 5px 13px !important;
+        margin-top: 2px;
+    }
+    .container-fluid{
+        padding: 3px;
     }
     nav {
         min-height: 3rem;
-        padding-top: 0.3rem !important;
+        padding-top: 0.7rem !important;
     }
-    .current-image-data .param_view_block{
+    .param_view_block{
         padding: unset;
+        overflow-wrap: normal;
+        overflow-x: hidden;
+        overflow-y: auto;
+        max-width: 100%;
+        hyphens: auto;
+        word-break: break-word;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
     }
+    .param_view_block_model{
+        background-color: unset;
+    }
+
 }
 
 @media (min-width: 769px) {

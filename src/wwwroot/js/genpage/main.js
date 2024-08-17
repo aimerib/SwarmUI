@@ -1066,7 +1066,7 @@ function listImageHistoryFolderAndFiles(path, isRefresh, callback, depth) {
         sortBy = sortElem.value;
         reverse = sortReverseElem.checked;
     }
-    else { // first call happens before headers are added built atm
+    else if (!isLikelyMobile()) { // first call happens before headers are added built atm
         fix = () => {
             let sortElem = document.getElementById('image_history_sort_by');
             let sortReverseElem = document.getElementById('image_history_sort_reverse');

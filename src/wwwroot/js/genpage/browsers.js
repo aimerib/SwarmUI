@@ -1259,6 +1259,9 @@ class GenPageBrowserClass {
             }
             this.headerBar.appendChild(formatSelector);
             this.headerBar.appendChild(buttons);
+            if (isLikelyMobile()) {
+                this.headerBar = this.createMobileHeader();
+            }
             refreshButton.onclick = this.refresh.bind(this);
             this.fullContentDiv.appendChild(this.headerBar);
             this.contentDiv = createDiv(

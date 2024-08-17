@@ -999,6 +999,66 @@ class GenPageBrowserClass {
         return bottomBar && !bottomBar.classList.contains("closed");
     }
 
+    sortFiles(sortBy) {
+        this.lastFiles.sort((a, b) => {
+            if (sortBy === 'name') {
+                return a.name.localeCompare(b.name);
+            } else if (sortBy === 'date') {
+                return new Date(b.date) - new Date(a.date);
+            }
+        });
+    }
+
+    createMobileHeader() {
+        const mobileHeader = createDiv(`${this.id}-mobile-header`, "browser-mobile-header");
+
+        // Create a dropdown for sorting
+        const sortSelect = document.createElement("select");
+        sortSelect.id = `${this.id}_mobile_sort`;
+        sortSelect.innerHTML = `
+            <option value="name">Sort by Name</option>
+            <option value="date">Sort by Date</option>
+        `;
+
+        // Create a button for reversing sort order
+        const reverseButton = document.createElement("button");
+        reverseButton.id = `${this.id}_mobile_reverse`;
+        reverseButton.innerText = "Reverse";
+        reverseButton.className = "mobile-reverse-button";
+
+        // Create a filter input
+        const filterInput = document.createElement("input");
+        filterInput.id = `${this.id}_mobile_filter`;
+        filterInput.type = "text";
+        filterInput.placeholder = "Filter...";
+        filterInput.className = "mobile-filter-input";
+
+        // Add event listeners
+        sortSelect.addEventListener("change", () => {
+            const sortBy = sortSelect.value;
+            this.sortFiles(sortBy);
+            this.updateWithoutDup();
+        });
+
+        reverseButton.addEventListener("click", () => {
+            this.lastFiles.reverse();
+            this.updateWithoutDup();
+        });
+
+        filterInput.addEventListener("input", () => {
+            this.filter = filterInput.value.toLowerCase();
+            localStorage.setItem(`browser_${this.id}_filter`, this.filter);
+            this.updateWithoutDup();
+        });
+
+        // Append elements to the mobile header
+        mobileHeader.appendChild(sortSelect);
+        mobileHeader.appendChild(reverseButton);
+        mobileHeader.appendChild(filterInput);
+
+        return mobileHeader;
+    }
+
     /**
      * Returns the visible element block for a given file name.
      */
@@ -1135,7 +1195,7 @@ class GenPageBrowserClass {
                 localStorage.setItem(`browser_${this.id}_format`, this.format);
                 this.updateWithoutDup();
             });
-            if (!this.showDisplayFormat) {
+            if (!this.showDisplayFormat || isLikelyMobile()) {
                 formatSelector.style.display = "none";
             }
             let buttons = createSpan(`${this.id}-button-container`, 'browser-header-buttons',
@@ -1174,6 +1234,9 @@ class GenPageBrowserClass {
             }
             this.headerBar.appendChild(formatSelector);
             this.headerBar.appendChild(buttons);
+            if (isLikelyMobile()) {
+                this.headerBar = this.createMobileHeader();
+            }
             refreshButton.onclick = this.refresh.bind(this);
             this.fullContentDiv.appendChild(this.headerBar);
             this.contentDiv = createDiv(

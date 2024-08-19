@@ -427,7 +427,6 @@ function watchForClassAndHideModalTags() {
 let isUpdatingExtras = false;
 
 const setupMobileCurrentImageExtras = () => {
-    console.log("Setting up mobile current image extras");
     if (isUpdatingExtras) return;
     isUpdatingExtras = true;
 
@@ -495,11 +494,26 @@ const setupMobileCurrentImageExtras = () => {
 
 const currentImage = document.getElementById("current_image");
 
+// if (currentImage) {
+//     currentImage.addEventListener(
+//         "DOMNodeInserted",
+//         setupMobileCurrentImageExtras
+//     );
+// }
+
 if (currentImage) {
-    currentImage.addEventListener(
-        "DOMNodeInserted",
-        setupMobileCurrentImageExtras
-    );
+    let isSettingUp = false;
+    const observer = new MutationObserver((mutations) => {
+        if (!isSettingUp) {
+            isSettingUp = true;
+            setupMobileCurrentImageExtras();
+            setTimeout(() => {
+                isSettingUp = false;
+            }, 0);
+        }
+    });
+
+    observer.observe(currentImage, { childList: true });
 }
 
 function setupMobileViewHeight() {
@@ -661,7 +675,6 @@ function setupNavigationDrawer() {
     });
     document.body.insertAdjacentHTML("beforeend", drawerHTML);
     handleAction(handle, () => {
-        console.log("Drawer handle clicked");
         const bottomBar = document.getElementById("t2i_bottom_bar");
         const inputSidebar = document.getElementById("input_sidebar");
 
@@ -669,7 +682,6 @@ function setupNavigationDrawer() {
             !bottomBar?.classList.contains("closed") ||
             !inputSidebar?.classList.contains("closed")
         ) {
-            console.log("Closing open flyouts");
             if (!bottomBar?.classList.contains("closed")) {
                 toggleBottomBar();
             }
@@ -680,7 +692,6 @@ function setupNavigationDrawer() {
             drawer.classList.remove("open");
             updateDrawerIcon("closed");
         } else {
-            console.log("Toggling drawer");
             drawer.classList.toggle("open");
             if (drawer.classList.contains("open")) {
                 drawer.style.transform = "translateY(calc(100% + -170px))";

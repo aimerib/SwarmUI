@@ -103,6 +103,7 @@ class GenPageBrowserClass {
         this.totalPages = 0;
         this.initialLoadDone = false;
         this.isNavigating = false;
+        this.currentSortMethod = "name";
     }
 
     /**
@@ -119,7 +120,6 @@ class GenPageBrowserClass {
      * Updates/refreshes the browser view.
      */
     update(isRefresh = false, callback = null) {
-        console.log(this.folder, this.lastPath);
         this.updatePendingSince = new Date().getTime();
         if (isRefresh) {
             this.tree = new BrowserTreePart("", {}, false, null, null, "");
@@ -129,22 +129,33 @@ class GenPageBrowserClass {
             this.folder,
             isRefresh,
             (folders, files) => {
-                console.log(
-                    `listFoldersAndFiles callback: ${files.length} files received`
-                ); // Debug log
-
-                // this.updateTotalPages(files);
                 this.allItems = files;
-                this.applyFilterAndSort();
-                this.build(this.folder, folders, this.filteredItems);
-                this.updatePendingSince = null;
-                if (callback) {
-                    setTimeout(() => callback(), 100);
+                console.log(this.allItems.length, folders.length);
+                if (this.allItems.length === 0 && folders.length > 0) {
+                    // If current folder is empty, fetch files from subfolders
+                    this.fetchFilesFromSubfolders(folders, 0);
+                } else {
+                    this.centralizePaginationAndFiltering();
+                    this.build(this.folder, folders, this.filteredItems);
+                    this.updatePendingSince = null;
+                    if (callback) {
+                        setTimeout(() => callback(), 100);
+                    }
+                    if (this.wantsReupdate) {
+                        this.wantsReupdate = false;
+                        this.update();
+                    }
                 }
-                if (this.wantsReupdate) {
-                    this.wantsReupdate = false;
-                    this.update();
-                }
+                // this.centralizePaginationAndFiltering();
+                // this.build(this.folder, folders, this.filteredItems);
+                // this.updatePendingSince = null;
+                // if (callback) {
+                //     setTimeout(() => callback(), 100);
+                // }
+                // if (this.wantsReupdate) {
+                //     this.wantsReupdate = false;
+                //     this.update();
+                // }
             },
             this.depth
         );
@@ -262,20 +273,67 @@ class GenPageBrowserClass {
         }
     }
 
+    fetchFilesFromSubfolders(folders, currentDepth) {
+        console.log(currentDepth, folders.length, this.depth);
+        if (currentDepth >= this.depth || folders.length === 0) {
+            this.centralizePaginationAndFiltering();
+            this.build(this.folder, folders, this.filteredItems);
+            this.updatePendingSince = null;
+            return;
+        }
+
+        let filesFromSubfolders = [];
+        let foldersToCheck = [];
+        let foldersChecked = 0;
+
+        for (let folder of folders) {
+            let subfolderPath = this.path ? `${this.path}/${folder}` : folder;
+            console.log("subfolderPath", subfolderPath);
+            this.listFoldersAndFiles(
+                subfolderPath,
+                false,
+                (subFolders, subFiles) => {
+                    console.log("subFiles", subFiles);
+                    console.log("subFolders", subFolders);
+                    filesFromSubfolders = filesFromSubfolders.concat(subFiles);
+                    foldersToCheck = foldersToCheck.concat(
+                        subFolders.map((sf) => `${folder}/${sf}`)
+                    );
+                    foldersChecked++;
+
+                    if (foldersChecked === folders.length) {
+                        this.allItems =
+                            this.allItems.concat(filesFromSubfolders);
+                        if (
+                            this.allItems.length === 0 &&
+                            foldersToCheck.length > 0
+                        ) {
+                            this.fetchFilesFromSubfolders(
+                                foldersToCheck,
+                                currentDepth + 1
+                            );
+                        } else {
+                            this.centralizePaginationAndFiltering();
+                            this.build(this.path, folders, this.filteredItems);
+                            this.updatePendingSince = null;
+                        }
+                    }
+                },
+                this.depth - currentDepth
+            );
+        }
+    }
+
     getFolderFromPath(tree, path) {
-        console.log("getFolderFromPath", path, tree);
         let parts = path.split("/").filter(Boolean);
         let currentFolder = tree;
         for (let part of parts) {
-            console.log("Traversing:", part, "Current folder:", currentFolder);
             if (currentFolder.children && currentFolder.children[part]) {
                 currentFolder = currentFolder.children[part];
             } else {
-                console.log("Path not found:", part);
                 return null; // Path not found
             }
         }
-        console.log("Final folder:", currentFolder);
         return currentFolder;
     }
 
@@ -340,15 +398,15 @@ class GenPageBrowserClass {
         return pathGen;
     }
 
-    updateDisplayedItems(sortBy = null, reverse = false) {
-        this.applyFilterAndSort(sortBy);
+    updateDisplayedItems(reverse = false) {
+        this.centralizePaginationAndFiltering(reverse);
 
-        if (reverse) {
-            this.filteredItems.reverse();
-        }
+        // if (reverse) {
+        //     this.filteredItems.reverse();
+        // }
 
-        this.currentPage = 1; // Reset to first page after filtering/sorting
-        this.build(this.lastPath, null, this.allItems);
+        // this.currentPage = 1; // Reset to first page after filtering/sorting
+        this.build(this.lastPath, null, this.filteredItems);
     }
 
     rebuildContentList() {
@@ -370,34 +428,41 @@ class GenPageBrowserClass {
         this.totalPages = Math.ceil(
             this.filteredItems.length / this.itemsPerPage
         );
-        console.log(`Total pages: ${this.totalPages}`);
     }
 
     renderPaginationControls() {
         const paginationDiv = document.createElement("div");
         paginationDiv.className = "pagination-controls";
 
-        const createPageButton = (page) => {
+        const createPageButton = (page, isActive = false) => {
             const button = document.createElement("button");
             button.textContent = page;
             button.className = "page-button";
-            if (page === this.currentPage) {
+            if (isActive) {
                 button.classList.add("active");
+                button.addEventListener("click", () => {
+                    const newPage = prompt("Enter page number:", this.currentPage);
+                    if (newPage && !isNaN(newPage) && newPage > 0 && newPage <= this.totalPages) {
+                        this.currentPage = parseInt(newPage);
+                        this.centralizePaginationAndFiltering();
+                        this.build(this.lastPath, null, this.filteredItems);
+                    }
+                });
+            } else {
+                button.addEventListener("click", () => {
+                    this.currentPage = page;
+                    this.centralizePaginationAndFiltering();
+                    this.build(this.lastPath, null, this.filteredItems);
+                });
             }
-            button.addEventListener("click", () => {
-                this.currentPage = page;
-                this.build(this.lastPath, null, this.lastFiles);
-                this.updateWithoutDup();
-                this.rerender();
-            });
             return button;
         };
 
-        const addEllipsis = () => {
+        const createEllipsis = () => {
             const ellipsis = document.createElement("span");
             ellipsis.textContent = "...";
             ellipsis.className = "pagination-ellipsis";
-            paginationDiv.appendChild(ellipsis);
+            return ellipsis;
         };
 
         // Previous button
@@ -408,53 +473,52 @@ class GenPageBrowserClass {
         prevButton.addEventListener("click", () => {
             if (this.currentPage > 1) {
                 this.currentPage--;
-                this.build(this.lastPath, null, this.lastFiles);
-                this.updateWithoutDup();
-                this.rerender();
+                this.centralizePaginationAndFiltering();
+                this.build(this.lastPath, null, this.filteredItems);
             }
         });
         paginationDiv.appendChild(prevButton);
 
-        // First three pages
-        for (let i = 1; i <= Math.min(2, this.totalPages); i++) {
-            paginationDiv.appendChild(createPageButton(i));
+        // First page
+        if (this.currentPage!== 1) {
+            paginationDiv.appendChild(createPageButton(1));
         }
 
-        if (this.totalPages > 6) {
-            addEllipsis();
+        const totalButtons = 5; // Total buttons to display (including ellipsis)
+        const sideButtons = 1; // Buttons on each side of the center
 
-            // Middle button for manual page input
-            const middleButton = document.createElement("button");
-            middleButton.textContent = "...";
-            middleButton.className = "page-button middle-button";
-            middleButton.addEventListener("click", () => {
-                const page = prompt("Enter page number:", this.currentPage);
-                if (
-                    page &&
-                    !isNaN(page) &&
-                    page > 0 &&
-                    page <= this.totalPages
-                ) {
-                    this.currentPage = parseInt(page);
-                    this.build(this.lastPath, null, this.lastFiles);
-                    this.updateWithoutDup();
-                    this.rerender();
-                }
-            });
-            paginationDiv.appendChild(middleButton);
+        if (this.totalPages <= totalButtons) {
+            // If total pages fit within the display, show all pages
+            for (let i = 2; i < this.totalPages; i++) {
+                paginationDiv.appendChild(createPageButton(i, i === this.currentPage));
+            }
+        } else {
+            const leftMost = Math.max(2, this.currentPage - sideButtons);
+            const rightMost = Math.min(this.totalPages - 1, this.currentPage + sideButtons);
 
-            addEllipsis();
-        } else if (this.totalPages > 3) {
-            addEllipsis();
+            // Left side
+            if (leftMost > 2) {
+                paginationDiv.appendChild(createEllipsis());
+            }
+            for (let i = leftMost; i < this.currentPage; i++) {
+                paginationDiv.appendChild(createPageButton(i));
+            }
+
+            // Current page (always in the center when possible)
+            paginationDiv.appendChild(createPageButton(this.currentPage, true));
+
+            // Right side
+            for (let i = this.currentPage + 1; i <= rightMost; i++) {
+                paginationDiv.appendChild(createPageButton(i));
+            }
+            if (rightMost < this.totalPages - 1) {
+                paginationDiv.appendChild(createEllipsis());
+            }
         }
 
-        // Last two pages
-        for (
-            let i = Math.max(this.totalPages - 1, 3);
-            i <= this.totalPages;
-            i++
-        ) {
-            paginationDiv.appendChild(createPageButton(i));
+        // Last page
+        if (this.totalPages > 1 && this.currentPage!== this.totalPages) {
+            paginationDiv.appendChild(createPageButton(this.totalPages));
         }
 
         // Next button
@@ -465,9 +529,8 @@ class GenPageBrowserClass {
         nextButton.addEventListener("click", () => {
             if (this.currentPage < this.totalPages) {
                 this.currentPage++;
-                this.build(this.lastPath, null, this.lastFiles);
-                this.updateWithoutDup();
-                this.rerender();
+                this.centralizePaginationAndFiltering();
+                this.build(this.lastPath, null, this.filteredItems);
             }
         });
         paginationDiv.appendChild(nextButton);
@@ -484,47 +547,68 @@ class GenPageBrowserClass {
         this.rerender();
     }
 
-    applyFilter() {
-        this.filteredItems = this.allItems.filter(
-            (item) =>
-                item.name.toLowerCase().includes(this.filter.toLowerCase()) ||
-                (item.searchable &&
-                    item.searchable
-                        .toLowerCase()
-                        .includes(this.filter.toLowerCase()))
+    applyFilter(reverse = false) {
+        if (reverse) {
+            this.allItems.reverse();
+        }
+        if (this.filter === "") {
+            this.filteredItems = this.allItems;
+            return;
+        }
+        this.filteredItems = this.allItems.filter((item) =>
+            item.name.toLowerCase().includes(this.filter.toLowerCase())
         );
+        console.log(this.filteredItems);
     }
 
-    sortFiles(sortBy) {
+    sortFiles() {
         this.filteredItems.sort((a, b) => {
-            if (sortBy === "name") {
-                return a.name.localeCompare(b.name);
-            } else if (sortBy === "date") {
+            if (this.currentSortMethod === "name") {
+                return b.name.localeCompare(a.name);
+            } else if (this.currentSortMethod === "date") {
                 return new Date(b.date) - new Date(a.date);
             }
         });
     }
 
-    applyFilterAndSort(sortBy) {
-        console.log(`Before filter: ${this.allItems.length} items`);
-        this.applyFilter();
-        console.log(`After filter: ${this.filteredItems.length} items`);
-        if (sortBy) {
-            this.sortFiles(sortBy);
-        }
+    // applyFilterAndSort(sortBy) {
+    //     console.log(`Before filter: ${this.allItems.length} items`);
+    //     this.applyFilter();
+    //     console.log(`After filter: ${this.filteredItems.length} items`);
+    //     if (sortBy) {
+    //         this.sortFiles(sortBy);
+    //     }
+    //     this.updateTotalPages();
+    //     this.currentPage = 1; // Reset to first page after filtering/sorting
+    // }
+
+    centralizePaginationAndFiltering(reverse = false) {
+        // const cacheKey = `${this.filter}_${this.currentSortMethod}_${
+        //     this.path ? this.path : "//"
+        // }_${this.folder}_${this.currentPage}_${reverse}`;
+        // console.log(`Centralizing pagination and filtering for ${cacheKey}`);
+        // if (this.cachedResults && this.cachedResults.key === cacheKey) {
+        //     this.filteredItems = this.cachedResults.items;
+        // } else {
+        this.applyFilter(reverse);
+        this.sortFiles();
+        // this.cachedResults = {
+        //     key: cacheKey,
+        //     items: this.filteredItems,
+        // };
+        // }
         this.updateTotalPages();
-        this.currentPage = 1; // Reset to first page after filtering/sorting
+        if (this.currentPage > this.totalPages) {
+            this.currentPage = 1;
+        }
     }
 
     buildMobileTreeElements(container, path, tree) {
         // Clear existing content
-        console.log("clearing", container);
         container.innerHTML = "";
 
         // Create header
-        console.log("calling create header for path/tree:", path, tree);
         const header = this.createHeader(path, tree);
-        console.log("created header:", header);
         container.appendChild(header);
 
         const content = createDiv(null, "mobile-file-browser-content");
@@ -534,7 +618,6 @@ class GenPageBrowserClass {
     }
 
     createHeader(path, tree) {
-        console.log("Header for path:", path);
         const header = createDiv(null, "mobile-file-browser-header");
 
         if (path !== "/" && path !== "") {
@@ -567,6 +650,7 @@ class GenPageBrowserClass {
                 if (subTree.fileData) {
                     this.select(subTree.fileData, null);
                 } else {
+                    console.log(path, name);
                     const newPath = `${path}/${name}/`;
                     this.debouncedNavigateMobile(newPath);
                 }
@@ -588,20 +672,31 @@ class GenPageBrowserClass {
     }
 
     navigateMobile(path, callback) {
-        if (!path || path === "") {
-            path = "/";
-        }
-        path = "/" + path.split("/").filter(Boolean).join("/") + "/";
+        this.currentPage = 1;
+        // if (!path || path === "") {
+        //     path = "/";
+        // }
+        // path = "/" + path.split("/").filter(Boolean).join("/") + "/";
         this.path = path;
         let currentTree = this.getFolderFromPath(this.tree, path);
-
+        console.log("navigateMobile", path, currentTree);
         this.listFoldersAndFiles(
             path,
             true,
             (folders, files) => {
                 this.allItems = files;
-                this.applyFilterAndSort();
-                console.log(`Filtered items: ${this.filteredItems.length}`); // Add this log
+                // if (this.allItems.length === 0 && folders.length > 0) {
+                //     // If current folder is empty, fetch files from subfolders
+                //     this.fetchFilesFromSubfolders(folders, 0);
+                // } else {
+                this.centralizePaginationAndFiltering();
+                console.log(
+                    "navigate",
+                    path,
+                    folders.length,
+                    files.length,
+                    this.filteredItems
+                );
                 if (
                     this.filteredItems.length === 0 &&
                     this.allItems.length > 0
@@ -610,7 +705,7 @@ class GenPageBrowserClass {
                 }
 
                 this.buildMobileTreeElements(
-                    document.getElementById(`${this.id}-foldertree`),
+                    document.getElementById(`${this.id}-mobile-foldertree`),
                     path,
                     currentTree
                 );
@@ -623,6 +718,29 @@ class GenPageBrowserClass {
                 if (this.folderSelectedEvent) {
                     this.folderSelectedEvent(path);
                 }
+                // }
+                // this.centralizePaginationAndFiltering();
+                // if (
+                //     this.filteredItems.length === 0 &&
+                //     this.allItems.length > 0
+                // ) {
+                //     this.filteredItems = this.allItems; // Use all items if filtered list is empty
+                // }
+
+                // this.buildMobileTreeElements(
+                //     document.getElementById(`${this.id}-mobile-foldertree`),
+                //     path,
+                //     currentTree
+                // );
+
+                // this.build(path, folders, this.filteredItems);
+
+                // if (callback) {
+                //     setTimeout(() => callback(), 100);
+                // }
+                // if (this.folderSelectedEvent) {
+                //     this.folderSelectedEvent(path);
+                // }
             },
             this.depth
         );
@@ -659,19 +777,22 @@ class GenPageBrowserClass {
 
         // Add event listeners
         sortSelect.addEventListener("change", () => {
-            const sortBy = sortSelect.value;
-            this.updateDisplayedItems(sortBy);
+            this.currentSortMethod = sortSelect.value;
+            this.updateDisplayedItems();
         });
 
         reverseButton.addEventListener("click", () => {
-            this.updateDisplayedItems(null, true);
+            this.updateDisplayedItems(true);
         });
 
-        filterInput.addEventListener("input", () => {
-            this.filter = filterInput.value.toLowerCase();
-            localStorage.setItem(`browser_${this.id}_filter`, this.filter);
-            this.updateDisplayedItems();
-        });
+        filterInput.addEventListener(
+            "input",
+            debounce(() => {
+                this.filter = filterInput.value.toLowerCase();
+                localStorage.setItem(`browser_${this.id}_filter`, this.filter);
+                this.updateDisplayedItems();
+            }, 300)
+        ); // 300ms debounce time, adjust as needed
 
         // Append elements to the mobile header
         mobileHeader.appendChild(sortSelect);
@@ -784,10 +905,9 @@ class GenPageBrowserClass {
      * Fills the container with the content list.
      */
     buildContentList(container, files, before = null, startId = 0) {
-        container.innerHTML = ""; // Clear existing content
-        console.log(`Building content list with ${files.length} files`); // Debug log
+        if (isLikelyMobile()) container.innerHTML = ""; // Clear existing content
 
-        if (this.totalPages > 1) {
+        if (this.totalPages > 1 && isLikelyMobile()) {
             const paginationControlsTop = this.renderPaginationControls();
             container.appendChild(paginationControlsTop);
         }
@@ -927,7 +1047,7 @@ class GenPageBrowserClass {
                 div.appendChild(menu);
             }
             div.title = stripHtmlToText(desc.description);
-            // img.classList.add("lazyload");
+            if (!isLikelyMobile()) img.classList.add("lazyload");
             img.src = desc.image;
             if (desc.dragimage) {
                 img.addEventListener("dragstart", (e) => {
@@ -945,16 +1065,15 @@ class GenPageBrowserClass {
             } else {
                 container.appendChild(div);
             }
-            console.log(`Added item ${i + 1} to container`); // Debug log
         }
-        const paginationControlsTop = this.renderPaginationControls();
-        const paginationControlsBottom = this.renderPaginationControls();
-        if (container && this.totalPages > 1) {
-            container.prepend(paginationControlsTop);
-            container.appendChild(paginationControlsBottom);
-        }
+        // const paginationControlsTop = this.renderPaginationControls();
+        // const paginationControlsBottom = this.renderPaginationControls();
+        // if (container && this.totalPages > 1 && isLikelyMobile()) {
+        //     container.prepend(paginationControlsTop);
+        //     container.appendChild(paginationControlsBottom);
+        // }
 
-        if (this.totalPages > 1) {
+        if (this.totalPages > 1 && isLikelyMobile()) {
             const paginationControlsBottom = this.renderPaginationControls();
             container.appendChild(paginationControlsBottom);
         }
@@ -1025,22 +1144,44 @@ class GenPageBrowserClass {
             files = this.lastFiles;
         }
         this.lastFiles = files;
-        if (files) {
-            this.allItems = files;
-            this.applyFilterAndSort(); // This will update filteredItems
-            if (this.filteredItems.length === 0) {
-                this.filteredItems = this.allItems;
-            }
-        }
-
         const start = (this.currentPage - 1) * this.itemsPerPage;
         const end = start + this.itemsPerPage;
         const paginatedFiles = this.filteredItems.slice(start, end);
-
-        if (paginatedFiles && this.folderTreeShowFiles) {
+        const filesToRender = isLikelyMobile() ? paginatedFiles : files;
+        if (isLikelyMobile()) {
+            if (files) {
+                this.items = files;
+                this.allItems = files;
+                this.centralizePaginationAndFiltering(); // This will update filteredItems
+                // if (this.filteredItems.length === 0) {
+                //     this.filteredItems = this.allItems;
+                // }
+            }
+            if (filesToRender && this.folderTreeShowFiles) {
+                this.refillTree(
+                    path,
+                    filesToRender.map((f) => {
+                        let name = f.name.substring(path.length);
+                        if (name.startsWith("/")) {
+                            name = name.substring(1);
+                        }
+                        return name;
+                    }),
+                    true
+                );
+            }
+            if (this.contentDiv) {
+                this.contentDiv.innerHTML = "";
+            } else {
+                this.contentDiv = createDiv(
+                    `${this.id}-content`,
+                    "browser-content-container"
+                );
+            }
+        } else if (filesToRender && this.folderTreeShowFiles) {
             this.refillTree(
                 path,
-                paginatedFiles.map((f) => {
+                filesToRender.map((f) => {
                     let name = f.name.substring(path.length);
                     if (name.startsWith("/")) {
                         name = name.substring(1);
@@ -1048,14 +1189,6 @@ class GenPageBrowserClass {
                     return name;
                 }),
                 true
-            );
-        }
-        if (this.contentDiv) {
-            this.contentDiv.innerHTML = "";
-        } else {
-            this.contentDiv = createDiv(
-                `${this.id}-content`,
-                "browser-content-container"
             );
         }
 
@@ -1163,9 +1296,6 @@ class GenPageBrowserClass {
             }
             this.headerBar.appendChild(formatSelector);
             this.headerBar.appendChild(buttons);
-            if (isLikelyMobile()) {
-                this.headerBar = this.createMobileHeader();
-            }
             refreshButton.onclick = this.refresh.bind(this);
             this.fullContentDiv.appendChild(this.headerBar);
             this.contentDiv = createDiv(
@@ -1233,17 +1363,26 @@ class GenPageBrowserClass {
         }
         this.headerPath = this.genPath(path, this.upButton);
         this.headerBar.appendChild(this.headerPath);
-        const mobileContainer = document.getElementById(
-            `${this.id}-foldertree`
-        );
-        if (mobileContainer) {
+        if (isLikelyMobile()) {
+            let mobileContainer = document.getElementById(
+                `${this.id}-mobile-foldertree`
+            );
+            if (!mobileContainer) {
+                mobileContainer = createDiv(
+                    `${this.id}-mobile-foldertree`,
+                    "mobile-file-browser-container"
+                );
+                this.container.prepend(mobileContainer);
+            }
             this.buildMobileTreeElements(
                 mobileContainer,
                 path,
                 this.getFolderFromPath(this.tree, path)
             );
         }
-        this.buildContentList(this.contentDiv, paginatedFiles);
+        if (!isLikelyMobile())
+            this.buildTreeElements(this.folderTreeDiv, "", this.tree);
+        this.buildContentList(this.contentDiv, filesToRender);
         this.folderTreeDiv.scrollTop = folderScroll;
         this.makeVisible(this.contentDiv);
         if (scrollOffset) {

@@ -69,6 +69,19 @@
   max-width: 800px;
   margin: 20px auto;
   transition: all 0.3s ease;
+
+  max-width: 100%;
+  overflow-y: auto !important;
+}
+
+@media screen and (min-width: 600px) {
+ .model-block {
+    display: grid !important;
+    justify-items: center;
+  }
+  .model-descblock {
+    height: fit-content !important;
+  }
 }
 
 .model-block:hover {
@@ -85,8 +98,9 @@
 
 .model-descblock {
   padding: 16px;
-  font-size: 14px;
+  font-size: 14px !important;
   line-height: 1.5;
+  width: 100% !important;
 }
 
 .param_view_block {

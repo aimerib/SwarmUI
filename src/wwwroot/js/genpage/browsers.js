@@ -95,9 +95,9 @@ class GenPageBrowserClass {
         this.updatePendingSince = null;
         this.wantsReupdate = false;
         this.describe = describe;
-        this.items = []; // Add this line to explicitly manage items
-        this.allItems = []; // Store all items
-        this.filteredItems = []; // Store filtered items
+        this.items = [];
+        this.allItems = [];
+        this.filteredItems = [];
         this.itemsPerPage = 10;
         this.currentPage = 1;
         this.totalPages = 0;
@@ -130,9 +130,7 @@ class GenPageBrowserClass {
             isRefresh,
             (folders, files) => {
                 this.allItems = files;
-                console.log(this.allItems.length, folders.length);
                 if (this.allItems.length === 0 && folders.length > 0) {
-                    // If current folder is empty, fetch files from subfolders
                     this.fetchFilesFromSubfolders(folders, 0);
                 } else {
                     this.centralizePaginationAndFiltering();
@@ -146,16 +144,6 @@ class GenPageBrowserClass {
                         this.update();
                     }
                 }
-                // this.centralizePaginationAndFiltering();
-                // this.build(this.folder, folders, this.filteredItems);
-                // this.updatePendingSince = null;
-                // if (callback) {
-                //     setTimeout(() => callback(), 100);
-                // }
-                // if (this.wantsReupdate) {
-                //     this.wantsReupdate = false;
-                //     this.update();
-                // }
             },
             this.depth
         );
@@ -274,7 +262,6 @@ class GenPageBrowserClass {
     }
 
     fetchFilesFromSubfolders(folders, currentDepth) {
-        console.log(currentDepth, folders.length, this.depth);
         if (currentDepth >= this.depth || folders.length === 0) {
             this.centralizePaginationAndFiltering();
             this.build(this.folder, folders, this.filteredItems);
@@ -288,13 +275,10 @@ class GenPageBrowserClass {
 
         for (let folder of folders) {
             let subfolderPath = this.path ? `${this.path}/${folder}` : folder;
-            console.log("subfolderPath", subfolderPath);
             this.listFoldersAndFiles(
                 subfolderPath,
                 false,
                 (subFolders, subFiles) => {
-                    console.log("subFiles", subFiles);
-                    console.log("subFolders", subFolders);
                     filesFromSubfolders = filesFromSubfolders.concat(subFiles);
                     foldersToCheck = foldersToCheck.concat(
                         subFolders.map((sf) => `${folder}/${sf}`)
@@ -331,7 +315,7 @@ class GenPageBrowserClass {
             if (currentFolder.children && currentFolder.children[part]) {
                 currentFolder = currentFolder.children[part];
             } else {
-                return null; // Path not found
+                return null;
             }
         }
         return currentFolder;
@@ -400,28 +384,7 @@ class GenPageBrowserClass {
 
     updateDisplayedItems(reverse = false) {
         this.centralizePaginationAndFiltering(reverse);
-
-        // if (reverse) {
-        //     this.filteredItems.reverse();
-        // }
-
-        // this.currentPage = 1; // Reset to first page after filtering/sorting
         this.build(this.lastPath, null, this.filteredItems);
-    }
-
-    rebuildContentList() {
-        if (!this.contentDiv) {
-            console.warn("Content div not available, skipping rebuild");
-            return;
-        }
-
-        const start = (this.currentPage - 1) * this.itemsPerPage;
-        const end = start + this.itemsPerPage;
-        const paginatedFiles = this.filteredItems.slice(start, end);
-
-        // Clear and rebuild only the content div
-        this.contentDiv.innerHTML = "";
-        this.buildContentList(this.contentDiv, paginatedFiles);
     }
 
     updateTotalPages() {
@@ -465,7 +428,6 @@ class GenPageBrowserClass {
             return ellipsis;
         };
 
-        // Previous button
         const prevButton = document.createElement("button");
         prevButton.textContent = "←";
         prevButton.className = "nav-button prev-button";
@@ -479,7 +441,6 @@ class GenPageBrowserClass {
         });
         paginationDiv.appendChild(prevButton);
 
-        // First page
         if (this.currentPage!== 1) {
             paginationDiv.appendChild(createPageButton(1));
         }
@@ -496,7 +457,6 @@ class GenPageBrowserClass {
             const leftMost = Math.max(2, this.currentPage - sideButtons);
             const rightMost = Math.min(this.totalPages - 1, this.currentPage + sideButtons);
 
-            // Left side
             if (leftMost > 2) {
                 paginationDiv.appendChild(createEllipsis());
             }
@@ -507,7 +467,6 @@ class GenPageBrowserClass {
             // Current page (always in the center when possible)
             paginationDiv.appendChild(createPageButton(this.currentPage, true));
 
-            // Right side
             for (let i = this.currentPage + 1; i <= rightMost; i++) {
                 paginationDiv.appendChild(createPageButton(i));
             }
@@ -516,12 +475,10 @@ class GenPageBrowserClass {
             }
         }
 
-        // Last page
         if (this.totalPages > 1 && this.currentPage!== this.totalPages) {
             paginationDiv.appendChild(createPageButton(this.totalPages));
         }
 
-        // Next button
         const nextButton = document.createElement("button");
         nextButton.textContent = "→";
         nextButton.className = "nav-button next-button";
@@ -558,7 +515,6 @@ class GenPageBrowserClass {
         this.filteredItems = this.allItems.filter((item) =>
             item.name.toLowerCase().includes(this.filter.toLowerCase())
         );
-        console.log(this.filteredItems);
     }
 
     sortFiles() {
@@ -571,32 +527,9 @@ class GenPageBrowserClass {
         });
     }
 
-    // applyFilterAndSort(sortBy) {
-    //     console.log(`Before filter: ${this.allItems.length} items`);
-    //     this.applyFilter();
-    //     console.log(`After filter: ${this.filteredItems.length} items`);
-    //     if (sortBy) {
-    //         this.sortFiles(sortBy);
-    //     }
-    //     this.updateTotalPages();
-    //     this.currentPage = 1; // Reset to first page after filtering/sorting
-    // }
-
     centralizePaginationAndFiltering(reverse = false) {
-        // const cacheKey = `${this.filter}_${this.currentSortMethod}_${
-        //     this.path ? this.path : "//"
-        // }_${this.folder}_${this.currentPage}_${reverse}`;
-        // console.log(`Centralizing pagination and filtering for ${cacheKey}`);
-        // if (this.cachedResults && this.cachedResults.key === cacheKey) {
-        //     this.filteredItems = this.cachedResults.items;
-        // } else {
         this.applyFilter(reverse);
         this.sortFiles();
-        // this.cachedResults = {
-        //     key: cacheKey,
-        //     items: this.filteredItems,
-        // };
-        // }
         this.updateTotalPages();
         if (this.currentPage > this.totalPages) {
             this.currentPage = 1;
@@ -604,12 +537,14 @@ class GenPageBrowserClass {
     }
 
     buildMobileTreeElements(container, path, tree) {
-        // Clear existing content
         container.innerHTML = "";
 
-        // Create header
         const header = this.createHeader(path, tree);
         container.appendChild(header);
+
+        const filterInput = this.createMobileHeader();
+        // TODO: Continue from here. Fix filter/sort buttons
+        // container.appendChild(filterInput);
 
         const content = createDiv(null, "mobile-file-browser-content");
         container.appendChild(content);
@@ -639,7 +574,7 @@ class GenPageBrowserClass {
             const item = createDiv(null, "mobile-file-browser-item");
 
             const icon = createSpan(null, "mobile-file-browser-icon");
-            icon.innerHTML = subTree.fileData ? "📄" : "📁"; // File or folder icon
+            icon.innerHTML = subTree.fileData ? "📄" : "📁";
             item.appendChild(icon);
 
             const itemName = createSpan(null, "mobile-file-browser-item-name");
@@ -650,8 +585,7 @@ class GenPageBrowserClass {
                 if (subTree.fileData) {
                     this.select(subTree.fileData, null);
                 } else {
-                    console.log(path, name);
-                    const newPath = `${path}/${name}/`;
+                    const newPath = path ? `${path}/${name}` : name;
                     this.debouncedNavigateMobile(newPath);
                 }
             };
@@ -660,55 +594,28 @@ class GenPageBrowserClass {
         }
     }
 
-    navigateUp(currentPath) {
-        const parts = currentPath.split("/").filter(Boolean);
-        let parentPath;
-        if (parts.length > 1) {
-            parentPath = "/" + parts.slice(0, -1).join("/") + "/";
-        } else {
-            parentPath = "/";
-        }
+    navigateUp() {
+        const parts = this.path.split("/").filter(Boolean);
+        let parentPath = parts.length > 1 ? parts.slice(0, -1).join("/") : parts.slice(0, -1).join("");
         this.debouncedNavigateMobile(parentPath);
     }
 
     navigateMobile(path, callback) {
         this.currentPage = 1;
-        // if (!path || path === "") {
-        //     path = "/";
-        // }
-        // path = "/" + path.split("/").filter(Boolean).join("/") + "/";
         this.path = path;
-        let currentTree = this.getFolderFromPath(this.tree, path);
-        console.log("navigateMobile", path, currentTree);
+        window.listFolders = this.listFoldersAndFiles.bind(this);
         this.listFoldersAndFiles(
             path,
             true,
             (folders, files) => {
                 this.allItems = files;
-                // if (this.allItems.length === 0 && folders.length > 0) {
-                //     // If current folder is empty, fetch files from subfolders
-                //     this.fetchFilesFromSubfolders(folders, 0);
-                // } else {
                 this.centralizePaginationAndFiltering();
-                console.log(
-                    "navigate",
-                    path,
-                    folders.length,
-                    files.length,
-                    this.filteredItems
-                );
                 if (
                     this.filteredItems.length === 0 &&
                     this.allItems.length > 0
                 ) {
-                    this.filteredItems = this.allItems; // Use all items if filtered list is empty
+                    this.filteredItems = this.allItems;
                 }
-
-                this.buildMobileTreeElements(
-                    document.getElementById(`${this.id}-mobile-foldertree`),
-                    path,
-                    currentTree
-                );
 
                 this.build(path, folders, this.filteredItems);
 
@@ -718,29 +625,6 @@ class GenPageBrowserClass {
                 if (this.folderSelectedEvent) {
                     this.folderSelectedEvent(path);
                 }
-                // }
-                // this.centralizePaginationAndFiltering();
-                // if (
-                //     this.filteredItems.length === 0 &&
-                //     this.allItems.length > 0
-                // ) {
-                //     this.filteredItems = this.allItems; // Use all items if filtered list is empty
-                // }
-
-                // this.buildMobileTreeElements(
-                //     document.getElementById(`${this.id}-mobile-foldertree`),
-                //     path,
-                //     currentTree
-                // );
-
-                // this.build(path, folders, this.filteredItems);
-
-                // if (callback) {
-                //     setTimeout(() => callback(), 100);
-                // }
-                // if (this.folderSelectedEvent) {
-                //     this.folderSelectedEvent(path);
-                // }
             },
             this.depth
         );
@@ -754,7 +638,6 @@ class GenPageBrowserClass {
             "browser-mobile-header"
         );
 
-        // Create a dropdown for sorting
         const sortSelect = document.createElement("select");
         sortSelect.id = `${this.id}_mobile_sort`;
         sortSelect.innerHTML = `
@@ -762,20 +645,17 @@ class GenPageBrowserClass {
             <option value="date">Sort by Date</option>
         `;
 
-        // Create a button for reversing sort order
         const reverseButton = document.createElement("button");
         reverseButton.id = `${this.id}_mobile_reverse`;
         reverseButton.innerText = "Reverse";
         reverseButton.className = "mobile-reverse-button";
 
-        // Create a filter input
         const filterInput = document.createElement("input");
         filterInput.id = `${this.id}_mobile_filter`;
         filterInput.type = "text";
         filterInput.placeholder = "Filter...";
         filterInput.className = "mobile-filter-input";
 
-        // Add event listeners
         sortSelect.addEventListener("change", () => {
             this.currentSortMethod = sortSelect.value;
             this.updateDisplayedItems();
@@ -792,9 +672,8 @@ class GenPageBrowserClass {
                 localStorage.setItem(`browser_${this.id}_filter`, this.filter);
                 this.updateDisplayedItems();
             }, 300)
-        ); // 300ms debounce time, adjust as needed
+        );
 
-        // Append elements to the mobile header
         mobileHeader.appendChild(sortSelect);
         mobileHeader.appendChild(reverseButton);
         mobileHeader.appendChild(filterInput);
@@ -872,11 +751,9 @@ class GenPageBrowserClass {
             };
             span.onclick = (e) => {
                 clicker(e.target.dataset.issymbol, null);
-                this.refreshPagination();
             };
             tree.clickme = (callback) => {
                 clicker(false, callback);
-                this.refreshPagination();
             };
         }
         tree.span = span;
@@ -905,7 +782,7 @@ class GenPageBrowserClass {
      * Fills the container with the content list.
      */
     buildContentList(container, files, before = null, startId = 0) {
-        if (isLikelyMobile()) container.innerHTML = ""; // Clear existing content
+        if (isLikelyMobile()) container.innerHTML = "";
 
         if (this.totalPages > 1 && isLikelyMobile()) {
             const paginationControlsTop = this.renderPaginationControls();
@@ -1066,13 +943,6 @@ class GenPageBrowserClass {
                 container.appendChild(div);
             }
         }
-        // const paginationControlsTop = this.renderPaginationControls();
-        // const paginationControlsBottom = this.renderPaginationControls();
-        // if (container && this.totalPages > 1 && isLikelyMobile()) {
-        //     container.prepend(paginationControlsTop);
-        //     container.appendChild(paginationControlsBottom);
-        // }
-
         if (this.totalPages > 1 && isLikelyMobile()) {
             const paginationControlsBottom = this.renderPaginationControls();
             container.appendChild(paginationControlsBottom);
@@ -1127,7 +997,7 @@ class GenPageBrowserClass {
      * Central call to build the browser content area.
      */
     build(path, folders, files) {
-        if (!path && this.lastPath) {
+        if (path !== "" && !path && this.lastPath) {
             path = this.lastPath;
         }
         if (path.endsWith("/")) {
@@ -1152,10 +1022,7 @@ class GenPageBrowserClass {
             if (files) {
                 this.items = files;
                 this.allItems = files;
-                this.centralizePaginationAndFiltering(); // This will update filteredItems
-                // if (this.filteredItems.length === 0) {
-                //     this.filteredItems = this.allItems;
-                // }
+                this.centralizePaginationAndFiltering();
             }
             if (filesToRender && this.folderTreeShowFiles) {
                 this.refillTree(

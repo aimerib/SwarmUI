@@ -407,14 +407,14 @@ class GenPageBrowserClass {
                     const newPage = prompt("Enter page number:", this.currentPage);
                     if (newPage && !isNaN(newPage) && newPage > 0 && newPage <= this.totalPages) {
                         this.currentPage = parseInt(newPage);
-                        this.centralizePaginationAndFiltering();
+                        // this.centralizePaginationAndFiltering();
                         this.build(this.lastPath, null, this.filteredItems);
                     }
                 });
             } else {
                 button.addEventListener("click", () => {
                     this.currentPage = page;
-                    this.centralizePaginationAndFiltering();
+                    // this.centralizePaginationAndFiltering();
                     this.build(this.lastPath, null, this.filteredItems);
                 });
             }
@@ -435,7 +435,7 @@ class GenPageBrowserClass {
         prevButton.addEventListener("click", () => {
             if (this.currentPage > 1) {
                 this.currentPage--;
-                this.centralizePaginationAndFiltering();
+                // this.centralizePaginationAndFiltering();
                 this.build(this.lastPath, null, this.filteredItems);
             }
         });
@@ -486,7 +486,7 @@ class GenPageBrowserClass {
         nextButton.addEventListener("click", () => {
             if (this.currentPage < this.totalPages) {
                 this.currentPage++;
-                this.centralizePaginationAndFiltering();
+                // this.centralizePaginationAndFiltering();
                 this.build(this.lastPath, null, this.filteredItems);
             }
         });
@@ -503,18 +503,18 @@ class GenPageBrowserClass {
         this.update();
         this.rerender();
     }
-
     applyFilter(reverse = false) {
-        if (reverse) {
-            this.allItems.reverse();
-        }
         if (this.filter === "") {
-            this.filteredItems = this.allItems;
-            return;
+            this.filteredItems = reverse ? [...this.allItems].reverse() : [...this.allItems];
+        } else {
+            const lowercaseFilter = this.filter.toLowerCase();
+            this.filteredItems = this.allItems.filter(item =>
+                item.name.toLowerCase().includes(lowercaseFilter)
+            );
+            if (reverse) {
+                this.filteredItems.reverse();
+            }
         }
-        this.filteredItems = this.allItems.filter((item) =>
-            item.name.toLowerCase().includes(this.filter.toLowerCase())
-        );
     }
 
     sortFiles() {
@@ -528,7 +528,11 @@ class GenPageBrowserClass {
     }
 
     centralizePaginationAndFiltering(reverse = false) {
-        this.applyFilter(reverse);
+        if (this.filter === "") {
+            this.resetFilteredItems();
+        } else {
+            this.applyFilter(reverse);
+        }
         this.sortFiles();
         this.updateTotalPages();
         if (this.currentPage > this.totalPages) {
@@ -542,7 +546,19 @@ class GenPageBrowserClass {
         const header = this.createHeader(path, tree);
         container.appendChild(header);
 
-        const filterInput = this.createMobileHeader();
+        const loupeIcon = document.createElement("button");
+        loupeIcon.innerHTML = "🔍"; // You can replace this with an SVG icon for better styling
+        loupeIcon.className = "mobile-loupe-icon";
+        loupeIcon.style.position = "absolute";
+        loupeIcon.style.right = "-15px";
+        loupeIcon.addEventListener("click", () => {
+            const mobileHeader = document.getElementById(`${this.id}-mobile-header`);
+            mobileHeader.style.display = 'block';
+        });
+        header.appendChild(loupeIcon);
+
+        const mobileHeader = this.createMobileHeader();
+        container.appendChild(mobileHeader);
         // TODO: Continue from here. Fix filter/sort buttons
         // container.appendChild(filterInput);
 
@@ -604,18 +620,23 @@ class GenPageBrowserClass {
         this.currentPage = 1;
         this.path = path;
         window.listFolders = this.listFoldersAndFiles.bind(this);
+        const mobileHeader = document.getElementById(`${this.id}-mobile-header`);
+        if (mobileHeader) {
+            mobileHeader.style.display = 'none';
+        }
         this.listFoldersAndFiles(
             path,
             true,
             (folders, files) => {
                 this.allItems = files;
+                this.resetFilteredItems();
                 this.centralizePaginationAndFiltering();
-                if (
-                    this.filteredItems.length === 0 &&
-                    this.allItems.length > 0
-                ) {
-                    this.filteredItems = this.allItems;
-                }
+                // if (
+                //     this.filteredItems.length === 0 &&
+                //     this.allItems.length > 0
+                // ) {
+                //     this.filteredItems = this.allItems;
+                // }
 
                 this.build(path, folders, this.filteredItems);
 
@@ -632,11 +653,17 @@ class GenPageBrowserClass {
 
     debouncedNavigateMobile = debounce(this.navigateMobile.bind(this), 100);
 
+    resetFilteredItems() {
+        this.filteredItems = [...this.allItems];
+        this.updateTotalPages();
+    }
+
     createMobileHeader() {
         const mobileHeader = createDiv(
             `${this.id}-mobile-header`,
-            "browser-mobile-header"
+            "browser-mobile-header floating-header"
         );
+        mobileHeader.style.display = 'none'; // Initially hidden
 
         const sortSelect = document.createElement("select");
         sortSelect.id = `${this.id}_mobile_sort`;
@@ -650,11 +677,11 @@ class GenPageBrowserClass {
         reverseButton.innerText = "Reverse";
         reverseButton.className = "mobile-reverse-button";
 
-        const filterInput = document.createElement("input");
-        filterInput.id = `${this.id}_mobile_filter`;
-        filterInput.type = "text";
-        filterInput.placeholder = "Filter...";
-        filterInput.className = "mobile-filter-input";
+        // const filterInput = document.createElement("input");
+        // filterInput.id = `${this.id}_mobile_filter`;
+        // filterInput.type = "text";
+        // filterInput.placeholder = "Filter...";
+        // filterInput.className = "mobile-filter-input";
 
         sortSelect.addEventListener("change", () => {
             this.currentSortMethod = sortSelect.value;
@@ -665,18 +692,60 @@ class GenPageBrowserClass {
             this.updateDisplayedItems(true);
         });
 
-        filterInput.addEventListener(
-            "input",
-            debounce(() => {
-                this.filter = filterInput.value.toLowerCase();
-                localStorage.setItem(`browser_${this.id}_filter`, this.filter);
-                this.updateDisplayedItems();
-            }, 300)
-        );
+        const filterContainer = createDiv(null, "mobile-filter-container");
+
+        const filterInput = document.createElement("input");
+        filterInput.id = `${this.id}_mobile_filter`;
+        filterInput.type = "text";
+        filterInput.placeholder = "Filter...";
+        filterInput.className = "mobile-filter-input";
+
+        const clearFilterButton = document.createElement("button");
+        clearFilterButton.innerText = "Clear";
+        clearFilterButton.className = "mobile-clear-filter-button";
+        clearFilterButton.style.display = "none";  // Initially hidden
+
+        filterInput.addEventListener("input", debounce(() => {
+            this.filter = filterInput.value.toLowerCase();
+            localStorage.setItem(`browser_${this.id}_filter`, this.filter);
+            clearFilterButton.style.display = this.filter ? "inline-block" : "none";
+            this.updateDisplayedItems();
+        }, 200));
+
+        clearFilterButton.addEventListener("click", debounce(() => {
+            filterInput.value = "";
+            this.filter = "";
+            localStorage.removeItem(`browser_${this.id}_filter`);
+            clearFilterButton.style.display = "none";
+            this.resetFilteredItems();
+            this.currentPage = 1; // Reset to first page
+            this.navigate(this.path); // Re-navigate to refresh the view
+        }, 100));
+
+        filterContainer.appendChild(filterInput);
+        filterContainer.appendChild(clearFilterButton);
+
+        // filterInput.addEventListener(
+        //     "input",
+        //     debounce(() => {
+        //         this.filter = filterInput.value.toLowerCase();
+        //         localStorage.setItem(`browser_${this.id}_filter`, this.filter);
+        //         this.updateDisplayedItems();
+        //     }, 300)
+        // );
 
         mobileHeader.appendChild(sortSelect);
         mobileHeader.appendChild(reverseButton);
-        mobileHeader.appendChild(filterInput);
+        mobileHeader.appendChild(filterContainer);
+
+        const closeButton = document.createElement("button");
+        closeButton.innerText = "×";
+        closeButton.className = "mobile-close-button";
+        closeButton.addEventListener("click", () => {
+            mobileHeader.style.display = 'none';
+        });
+
+        mobileHeader.appendChild(closeButton);
 
         return mobileHeader;
     }
@@ -1354,7 +1423,7 @@ class GenPageBrowserClass {
             this.headerCount.remove();
         }
         this.headerPath = this.genPath(path, this.upButton);
-        this.headerBar.appendChild(this.headerPath);
+        if (!isLikelyMobile()) this.headerBar.appendChild(this.headerPath);
         if (isLikelyMobile()) {
             let mobileContainer = document.getElementById(
                 `${this.id}-mobile-foldertree`

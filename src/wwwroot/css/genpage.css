@@ -2185,6 +2185,7 @@ background-color: var(--background);
     0px 3px 14px 2px hsla(0,0%,0%,0.12),
     0px 5px 5px -3px hsla(0,0%,0%,0.2);
     border-top-right-radius: 8px;
+    position: relative;
 }
 
 .mobile-file-browser-back {
@@ -2364,4 +2365,38 @@ background-color: var(--background);
 
 .pagination-controls .middle-button:hover {
     background-color: var(--emphasis-soft);
+}
+
+.mobile-filter-container{
+    display: flex;
+    gap: 13px;
+}
+
+.floating-header {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    z-index: 1000;
+}
+
+.mobile-loupe-icon {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+}
+
+.mobile-close-button {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
 }

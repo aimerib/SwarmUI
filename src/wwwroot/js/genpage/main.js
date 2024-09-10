@@ -2428,4 +2428,4 @@ function genpageLoad() {
     });
 }
 
-// setTimeout(genpageLoad, 1);
+setTimeout(genpageLoad, 1);

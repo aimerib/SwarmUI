@@ -87,6 +87,20 @@ function createEl(el, id, classes, html = null) {
     return node;
 }
 
+/**
+ * Debounce function to limit the rate at which a function can fire
+ * @param {Function} func - The function to debounce
+ * @param {number} wait - The debounce delay in milliseconds
+ * @returns {Function} - The debounced function
+ */
+const debounce = (func, wait) => {
+    let timeout;
+    return function (...args) {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func(...args), wait);
+    };
+};
+
 /** Escapes a string for use in HTML. */
 function escapeHtml(text) {
     if (text == null) {

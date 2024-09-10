@@ -947,7 +947,7 @@ class GenPageBrowserClass {
                 textBlock.innerHTML = desc.description;
                 div.appendChild(textBlock);
             } else if (this.format.includes("Thumbnails")) {
-                div.className += " image-block"; // image-block-legacy
+                div.className += " image-block image-block-legacy";
                 let factor = 8;
                 if (this.format.startsWith("Big")) {
                     factor = 15;

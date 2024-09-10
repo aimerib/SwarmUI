@@ -20,6 +20,16 @@ const mobileTabSelector = document.getElementById("mobile_tab_selector");
 const genButtonMobile = document.getElementById("alt_generate_button_mobile");
 const expandIndicator = document.getElementById("mobile_expand_indicator");
 
+// Error handling wrapper
+const safeExecute = (func, fallback = () => {}) => {
+    try {
+        return func();
+    } catch (error) {
+        console.error('Error in execution:', error);
+        return fallback();
+    }
+};
+
 /**
  * Mobile Detection Functions
  * These functions help determine if the user is on a mobile device.
@@ -88,92 +98,42 @@ const debounce = (func, wait) => {
  * Scrolls the active element or window to the top
  */
 const backToTop = () => {
-    (
-        document.querySelector(".mobile-flyout:not(.closed)") ||
-        tabContent ||
-        window
-    ).scrollTo({ top: 0, behavior: "smooth" });
+    const element = document.querySelector(".mobile-flyout:not(.closed)") || tabContent || window;
+    smoothScrollTo(element, 0, 300);
 };
 
-// /**
-//  * Creates the mobile menu structure
-//  * @returns {HTMLElement} - The created mobile menu element
-//  */
-// const createMobileMenu = () => {
-//     const menu = document.createElement("div");
-//     menu.className = "mobile-menu";
-//     menu.innerHTML = `
-//         <div class="mobile-menu-buttons">
-//             <button data-action="toggleInputSidebar">Inputs</button>
-//             <button data-action="toggleBottomBar">Extras</button>
-//             <button data-action="showOptions">Options</button>
-//             <button data-action="interrupt">Interrupt</button>
-//             <button data-action="backToTop">Top</button>
-//         </div>
-//     `;
-//     menu.querySelectorAll("button").forEach((button) => {
-//         handleAction(button, () => {
-//             const action = button.dataset.action;
-//             if (action) {
-//                 switch (action) {
-//                     case "toggleInputSidebar":
-//                         toggleInputSidebar();
-//                         updateFlyoutZIndex("input_sidebar");
-//                         break;
-//                     case "toggleBottomBar":
-//                         toggleBottomBar();
-//                         updateFlyoutZIndex("t2i_bottom_bar");
-//                         break;
-//                     case "showOptions":
-//                         doPopover("generate_center");
-//                         break;
-//                     case "interrupt":
-//                         mainGenHandler.doInterrupt();
-//                         break;
-//                     case "backToTop":
-//                         backToTop();
-//                         break;
-//                 }
-//             }
-//             menu.parentElement.removeChild(menu);
-//         });
-//     });
-//     return menu;
-// };
+/**
+ * Smooth scroll function using requestAnimationFrame
+ * @param {HTMLElement} element - The element to scroll
+ * @param {number} to - The target scroll position
+ * @param {number} duration - The duration of the scroll animation
+ */
+const smoothScrollTo = (element, to, duration) => {
+    const start = element.scrollTop;
+    const change = to - start;
+    let currentTime = 0;
+    const increment = 20;
 
-// /**
-//  * Displays the mobile menu
-//  */
-// const showMobileMenu = () => {
-//     const menu = createMobileMenu();
-//     const rect = genButtonMobile.getBoundingClientRect();
-//     Object.assign(menu.style, {
-//         position: "fixed",
-//         left: `${rect.left - 70}px`,
-//         top: `${rect.top - 200}px`,
-//         zIndex: "1050",
-//     });
+    const animateScroll = () => {
+        currentTime += increment;
+        const val = easeInOutQuad(currentTime, start, change, duration);
+        element.scrollTop = val;
+        if (currentTime < duration) {
+            requestAnimationFrame(animateScroll);
+        }
+    };
+    animateScroll();
+};
 
-//     document.body.appendChild(menu);
-
-//     const closeMenu = (e) => {
-//         if (menu && !menu.contains(e.target) && e.target !== genButtonMobile) {
-//             if (menu.parentElement) menu.parentElement.removeChild(menu);
-//             document.removeEventListener("click", closeMenu);
-//             document.removeEventListener("touchstart", closeMenu);
-//         }
-//     };
-
-//     setTimeout(
-//         () =>
-//             addMultipleEventListeners(
-//                 document,
-//                 ["click", "touchstart"],
-//                 closeMenu
-//             ),
-//         0
-//     );
-// };
+/**
+ * Easing function for smooth scrolling
+ */
+const easeInOutQuad = (t, b, c, d) => {
+    t /= d/2;
+    if (t < 1) return c/2*t*t + b;
+    t--;
+    return -c/2 * (t*(t-2) - 1) + b;
+};
 
 /**
  * Handles user actions on mobile, including long press detection
@@ -186,17 +146,15 @@ const handleAction = (element, handler, isLongPressEnabled = false) => {
     let hasMoved = false;
     let longPressTimer;
 
-    /**
-     * Handles user actions on mobile, including long press detection
-     * @param {TouchEvent} e - The payload sent by the touch event
-     */
     const touchStart = (e) => {
         e.preventDefault();
         e.stopPropagation();
         touchStartTime = Date.now();
         hasMoved = false;
         if (isLongPressEnabled) {
-            longPressTimer = setTimeout(showMobileMenu, LONG_PRESS_DURATION);
+            longPressTimer = setTimeout(() => {
+                // Long press action (if needed)
+            }, LONG_PRESS_DURATION);
         }
     };
 
@@ -207,10 +165,6 @@ const handleAction = (element, handler, isLongPressEnabled = false) => {
         }
     };
 
-    /**
-     * Handles user actions on mobile, including long press detection
-     * @param {TouchEvent} e - The payload sent by the touch event
-     */
     const touchEnd = (e) => {
         if (isLongPressEnabled) {
             clearTimeout(longPressTimer);
@@ -249,10 +203,11 @@ const disableIosTextFieldZoom = () => {
  * Initializes the mobile UI
  */
 const initializeMobileUI = () => {
-    setupTabSelector();
-    watchForClassAndHideModalTags();
+    console.log("Initializing mobile UI...");
     if (isLikelyMobile()) {
-        setupMobileUI();
+        safeExecute(setupTabSelector);
+        safeExecute(watchForClassAndHideModalTags);
+        safeExecute(setupMobileUI);
     }
 };
 
@@ -278,23 +233,34 @@ const setupTabSelector = () => {
  * Sets up the mobile UI elements
  */
 const setupMobileUI = () => {
-    document
-        .getElementById("version_display")
-        ?.style.setProperty("display", "none");
-    document
-        .getElementById("popover_generate")
-        ?.style.setProperty("display", "none");
-    inputSidebar.classList.add("mobile-flyout", "closed");
+    safeExecute(() => {
+        // Use MutationObserver to watch for version_display
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                if (mutation.type === 'childList') {
+                    const versionDisplay = document.getElementById("version_display");
+                    if (versionDisplay) {
+                        versionDisplay.style.display = "none";
+                        observer.disconnect(); // Stop observing once we've hidden the element
+                    }
+                }
+            });
+        });
 
-    setupFlyout(bottomBar, toggleBottomBar);
-    setupFlyout(inputSidebar, toggleInputSidebar);
-    setupBackToTopButton();
-    setupGenButtonMobile();
-    // This is a hack needed for iOS to ensure correct viewport sizing accounting for the address bottom bar
-    setupMobileViewHeight();
-    setupNavigationDrawer();
-    // setupMobileCurrentImageExtras();
-    setupCopyrightMessage();
+        // Start observing the document body for changes
+        observer.observe(document.body, { childList: true, subtree: true });
+
+        document.getElementById("popover_generate")?.style.setProperty("display", "none");
+        inputSidebar?.classList.add("mobile-flyout", "closed");
+
+        setupFlyout(bottomBar, toggleBottomBar);
+        setupFlyout(inputSidebar, toggleInputSidebar);
+        setupBackToTopButton();
+        setupGenButtonMobile();
+        setupMobileViewHeight();
+        setupNavigationDrawer();
+        setupCopyrightMessage();
+    });
 };
 
 /**
@@ -303,23 +269,10 @@ const setupMobileUI = () => {
  * @param {Function} toggleFunction - The function to toggle the flyout
  */
 const setupFlyout = (element, toggleFunction) => {
-    element.classList.add("mobile-flyout", "closed");
-    // const dragArea = document.createElement("div");
-    // dragArea.innerHTML = "&#9660;";
-    // Object.assign(dragArea.style, {
-    //     width: "100%",
-    //     height: "30px",
-    //     backgroundColor: "#2a2a2a",
-    //     textAlign: "center",
-    //     lineHeight: "30px",
-    //     color: "var(--emphasis)",
-    //     cursor: "pointer",
-    //     borderBottom: "1px solid #3a3a3a",
-    //     transition: "all 0.3s ease",
-    // });
-    // handleAction(dragArea, toggleFunction);
-    // element.insertBefore(dragArea, element.firstChild);
-    styleElement(element);
+    if (element) {
+        element.classList.add("mobile-flyout", "closed");
+        styleElement(element);
+    }
 };
 
 /**
@@ -348,7 +301,6 @@ const styleElement = (element) => {
         boxShadow: "rgba(0, 255, 255, 0.1) 0px -5px 15px",
         color: "rgb(255, 255, 255)",
         position: "absolute",
-        // paddingBottom: "70px",
         top: 0,
         overflowY: "auto",
         maxWidth: "100vw",
@@ -373,7 +325,9 @@ const setupBackToTopButton = () => {
  * Sets up the mobile generate button
  */
 const setupGenButtonMobile = () => {
-    handleAction(genButtonMobile, handleGenerateClickMobile, true);
+    if (genButtonMobile) {
+        handleAction(genButtonMobile, handleGenerateClickMobile, true);
+    }
 };
 
 /**
@@ -382,48 +336,11 @@ const setupGenButtonMobile = () => {
  */
 const handleGenerateClickMobile = (event) => {
     mainGenHandler.doGenerateButton(event);
-    bottomBar.classList.add("closed");
-    inputSidebar.classList.add("closed");
+    bottomBar?.classList.add("closed");
+    inputSidebar?.classList.add("closed");
     backToTop();
 };
 
-/**
- * Switches the mobile tab
- * @param {Event} e - The change event
- */
-const switchMobileTab = (e) => {
-    document
-        .querySelector(
-            `#bottombartabcollection .nav-link[href="${e?.target?.value}"]`
-        )
-        ?.click();
-};
-
-// Initialize the mobile UI
-initializeMobileUI();
-
-// Apply iOS-specific optimizations if necessary
-if (isIOS()) {
-    disableIosTextFieldZoom();
-}
-function watchForClassAndHideModalTags() {
-    const observer = new MutationObserver((mutations) => {
-        mutations.forEach((mutation) => {
-            if (mutation.type === 'childList') {
-                mutation.addedNodes.forEach((node) => {
-                    if (node.nodeType === Node.ELEMENT_NODE && node.classList.contains("imageview_modal_inner_div")) {
-                        const imageviewModalInnerDiv = document.querySelector(".imageview_modal_inner_div");
-                        if (imageviewModalInnerDiv) {
-                            imageviewModalInnerDiv.lastElementChild.style.display = "none";
-                        }
-                    }
-                });
-            }
-        });
-    });
-
-    observer.observe(document.body, { childList: true, subtree: true });
-}
 let isUpdatingExtras = false;
 
 const setupMobileCurrentImageExtras = () => {
@@ -442,20 +359,17 @@ const setupMobileCurrentImageExtras = () => {
         isUpdatingExtras = false;
         return;
     }
-    const currentImageData = extrasWrapper.querySelector(
-        ".current-image-data"
-    );
+    const currentImageData = extrasWrapper.querySelector(".current-image-data");
 
     // Get all children of the parent element
     if (currentImageData && currentImageData.children.length > 0) {
-        let children = currentImageData.querySelectorAll(':scope > *');
+        let children = currentImageData.querySelectorAll(":scope > *");
 
         currentImageData.innerHTML = "";
-        children.forEach(function(item) {
+        children.forEach(function (item) {
             currentImageData.appendChild(item);
         });
     }
-
 
     if (!extrasWrapper.classList.contains("open")) {
         extrasWrapper.classList.add("closed");
@@ -494,13 +408,6 @@ const setupMobileCurrentImageExtras = () => {
 
 const currentImage = document.getElementById("current_image");
 
-// if (currentImage) {
-//     currentImage.addEventListener(
-//         "DOMNodeInserted",
-//         setupMobileCurrentImageExtras
-//     );
-// }
-
 if (currentImage) {
     let isSettingUp = false;
     const observer = new MutationObserver((mutations) => {
@@ -514,6 +421,51 @@ if (currentImage) {
     });
 
     observer.observe(currentImage, { childList: true });
+}
+
+/**
+ * Switches the mobile tab
+ * @param {Event} e - The change event
+ */
+const switchMobileTab = (e) => {
+    document
+        .querySelector(
+            `#bottombartabcollection .nav-link[href="${e?.target?.value}"]`
+        )
+        ?.click();
+};
+
+// Initialize the mobile UI
+initializeMobileUI();
+
+// Apply iOS-specific optimizations if necessary
+if (isIOS()) {
+    disableIosTextFieldZoom();
+}
+
+function watchForClassAndHideModalTags() {
+    const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+            if (mutation.type === "childList") {
+                mutation.addedNodes.forEach((node) => {
+                    if (
+                        node.nodeType === Node.ELEMENT_NODE &&
+                        node.classList.contains("imageview_modal_inner_div")
+                    ) {
+                        const imageviewModalInnerDiv = document.querySelector(
+                            ".imageview_modal_inner_div"
+                        );
+                        if (imageviewModalInnerDiv) {
+                            imageviewModalInnerDiv.lastElementChild.style.display =
+                                "none";
+                        }
+                    }
+                });
+            }
+        });
+    });
+
+    observer.observe(document.body, { childList: true, subtree: true });
 }
 
 function setupMobileViewHeight() {
@@ -568,140 +520,138 @@ function setupNavigationDrawer() {
     document.body.insertAdjacentHTML("beforeend", drawerHTML);
 
     const drawer = document.getElementById("mobile-nav-drawer");
-    Object.assign(drawer.style, {
-        position: "fixed",
-        bottom: "0",
-        left: "0",
-        width: "100%",
-        backgroundColor: "#2a2a2a",
-        transition: "transform 0.3s ease-out",
-        transform: "translateY(calc(100% - 50px))",
-        zIndex: "1000",
-        boxShadow: "0px 8px 10px 1px hsla(0,0%,0%,0.14),0px 3px 14px 2px hsla(0,0%,0%,0.12),0px 5px 5px -3px hsla(0,0%,0%,0.2)",
-    });
+    if (drawer) {
+        Object.assign(drawer.style, {
+            position: "fixed",
+            bottom: "0",
+            left: "0",
+            width: "100%",
+            backgroundColor: "#2a2a2a",
+            transition: "transform 0.3s ease-out",
+            transform: "translateY(calc(100% - 50px))",
+            zIndex: "1000",
+            boxShadow:
+                "0px 8px 10px 1px hsla(0,0%,0%,0.14),0px 3px 14px 2px hsla(0,0%,0%,0.12),0px 5px 5px -3px hsla(0,0%,0%,0.2)",
+        });
 
-    drawer.querySelectorAll("button").forEach((button) => {
-        handleAction(button, () => {
-            const action = button.dataset.action;
-            if (action) {
-                switch (action) {
-                    case "toggleInputSidebar":
-                        toggleInputSidebar();
-                        updateFlyoutZIndex("input_sidebar");
-                        drawer?.classList.toggle("open");
-                        drawer?.classList.contains("open")
-                            ? (drawer.style.transform =
-                                  "translateY(calc(100% + -170px))")
-                            : (drawer.style.transform =
-                                  "translateY(calc(100% - 50px))");
-                        updateDrawerIcon("flyout-open");
-                        break;
-                    case "toggleBottomBar":
-                        toggleBottomBar();
-                        updateFlyoutZIndex("t2i_bottom_bar");
-                        drawer?.classList.toggle("open");
-                        drawer?.classList.contains("open")
-                            ? (drawer.style.transform =
-                                  "translateY(calc(100% + -170px))")
-                            : (drawer.style.transform =
-                                  "translateY(calc(100% - 50px))");
-                        updateDrawerIcon("flyout-open");
-                        break;
-                    case "showOptions":
-                        doPopover("generate_center");
-                        drawer?.classList.toggle("open");
-                        drawer?.classList.contains("open")
-                            ? (drawer.style.transform =
-                                  "translateY(calc(100% + -170px))")
-                            : (drawer.style.transform =
-                                  "translateY(calc(100% - 50px))");
-                        updateDrawerIcon("closed");
-                        break;
-                    case "interrupt":
-                        mainGenHandler.doInterrupt();
-                        drawer?.classList.toggle("open");
-                        drawer?.classList.contains("open")
-                            ? (drawer.style.transform =
-                                  "translateY(calc(100% + -170px))")
-                            : (drawer.style.transform =
-                                  "translateY(calc(100% - 50px))");
-                        updateDrawerIcon("closed");
-                        break;
-                    case "backToTop":
-                        backToTop();
-                        drawer?.classList.toggle("open");
-                        drawer?.classList.contains("open")
-                            ? (drawer.style.transform =
-                                  "translateY(calc(100% + -170px))")
-                            : (drawer.style.transform =
-                                  "translateY(calc(100% - 50px))");
-                        updateDrawerIcon("closed");
-                        break;
+        drawer.querySelector('.drawer-content')?.addEventListener('click', (e) => {
+            if (e.target.tagName === 'BUTTON') {
+                const action = e.target.dataset.action;
+                if (action) {
+                    switch (action) {
+                        case "toggleInputSidebar":
+                            toggleInputSidebar();
+                            updateFlyoutZIndex("input_sidebar");
+                            drawer?.classList.toggle("open");
+                            drawer.style.transform = drawer?.classList.contains("open")
+                                ? "translateY(calc(100% + -170px))"
+                                : "translateY(calc(100% - 50px))";
+                            updateDrawerIcon("flyout-open");
+                            break;
+                        case "toggleBottomBar":
+                            toggleBottomBar();
+                            updateFlyoutZIndex("t2i_bottom_bar");
+                            drawer?.classList.toggle("open");
+                            drawer.style.transform = drawer?.classList.contains("open")
+                                ? "translateY(calc(100% + -170px))"
+                                : "translateY(calc(100% - 50px))";
+                            updateDrawerIcon("flyout-open");
+                            break;
+                        case "showOptions":
+                            doPopover("generate_center");
+                            drawer?.classList.toggle("open");
+                            drawer.style.transform = drawer?.classList.contains("open")
+                                ? "translateY(calc(100% + -170px))"
+                                : "translateY(calc(100% - 50px))";
+                            updateDrawerIcon("closed");
+                            break;
+                        case "interrupt":
+                            mainGenHandler.doInterrupt();
+                            drawer?.classList.toggle("open");
+                            drawer.style.transform = drawer?.classList.contains("open")
+                                ? "translateY(calc(100% + -170px))"
+                                : "translateY(calc(100% - 50px))";
+                            updateDrawerIcon("closed");
+                            break;
+                        case "backToTop":
+                            backToTop();
+                            drawer?.classList.toggle("open");
+                            drawer.style.transform = drawer?.classList.contains("open")
+                                ? "translateY(calc(100% + -170px))"
+                                : "translateY(calc(100% - 50px))";
+                            updateDrawerIcon("closed");
+                            break;
+                    }
                 }
             }
-            // menu.parentElement.removeChild(menu);
         });
-    });
 
-    const handle = drawer.querySelector(".drawer-handle");
-    Object.assign(handle.style, {
-        height: "50px",
-        backgroundColor: "#2a2a2a",
-        borderTopLeftRadius: "20px",
-        borderTopRightRadius: "20px",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        cursor: "pointer",
-    });
+        const handle = drawer.querySelector(".drawer-handle");
+        if (handle) {
+            Object.assign(handle.style, {
+                height: "50px",
+                backgroundColor: "#2a2a2a",
+                borderTopLeftRadius: "20px",
+                borderTopRightRadius: "20px",
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                cursor: "pointer",
+            });
 
-    const icon = handle.querySelector(".drawer-icon");
-    Object.assign(icon.style, {
-        width: "50px",
-        height: "50px",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        fontSize: "24px",
-        color: "#fff",
-        transition: "transform 0.3s ease",
-    });
-
-    const content = drawer.querySelector(".drawer-content");
-    Object.assign(content.style, {
-        padding: "20px",
-        maxHeight: "calc(30dvh - 50px)",
-        overflowY: "auto",
-    });
-    document.body.insertAdjacentHTML("beforeend", drawerHTML);
-    handleAction(handle, () => {
-        const bottomBar = document.getElementById("t2i_bottom_bar");
-        const inputSidebar = document.getElementById("input_sidebar");
-
-        if (
-            !bottomBar?.classList.contains("closed") ||
-            !inputSidebar?.classList.contains("closed")
-        ) {
-            if (!bottomBar?.classList.contains("closed")) {
-                toggleBottomBar();
+            const icon = handle.querySelector(".drawer-icon");
+            if (icon) {
+                Object.assign(icon.style, {
+                    width: "50px",
+                    height: "50px",
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    fontSize: "24px",
+                    color: "#fff",
+                    transition: "transform 0.3s ease",
+                });
             }
-            if (!inputSidebar?.classList.contains("closed")) {
-                toggleInputSidebar();
-            }
-            drawer.style.transform = "translateY(calc(100% - 50px))";
-            drawer.classList.remove("open");
-            updateDrawerIcon("closed");
-        } else {
-            drawer.classList.toggle("open");
-            if (drawer.classList.contains("open")) {
-                drawer.style.transform = "translateY(calc(100% + -170px))";
-                updateDrawerIcon("open");
-            } else {
-                drawer.style.transform = "translateY(calc(100% - 50px))";
-                updateDrawerIcon("closed");
+
+            const content = drawer.querySelector(".drawer-content");
+            if (content) {
+                Object.assign(content.style, {
+                    padding: "20px",
+                    maxHeight: "calc(30dvh - 50px)",
+                    overflowY: "auto",
+                });
             }
         }
-    });
+
+        handleAction(handle, () => {
+            const bottomBar = document.getElementById("t2i_bottom_bar");
+            const inputSidebar = document.getElementById("input_sidebar");
+
+            if (
+                !bottomBar?.classList.contains("closed") ||
+                !inputSidebar?.classList.contains("closed")
+            ) {
+                if (!bottomBar?.classList.contains("closed")) {
+                    toggleBottomBar();
+                }
+                if (!inputSidebar?.classList.contains("closed")) {
+                    toggleInputSidebar();
+                }
+                drawer.style.transform = "translateY(calc(100% - 50px))";
+                drawer.classList.remove("open");
+                updateDrawerIcon("closed");
+            } else {
+                drawer.classList.toggle("open");
+                if (drawer.classList.contains("open")) {
+                    drawer.style.transform = "translateY(calc(100% + -170px))";
+                    updateDrawerIcon("open");
+                } else {
+                    drawer.style.transform = "translateY(calc(100% - 50px))";
+                    updateDrawerIcon("closed");
+                }
+            }
+        });
+    }
 }
 
 const updateDrawerIcon = (currState) => {
@@ -711,5 +661,7 @@ const updateDrawerIcon = (currState) => {
         closed: "bi bi-chevron-compact-up",
     };
     const icon = document.querySelector("#mobile-nav-drawer .drawer-icon i");
-    icon.className = drawerStates[currState];
+    if (icon) {
+        icon.className = drawerStates[currState];
+    }
 };

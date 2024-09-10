@@ -81,20 +81,6 @@ const toggleBottomBar = () => toggleElement(bottomBar);
 const toggleInputSidebar = () => toggleElement(inputSidebar);
 
 /**
- * Debounce function to limit the rate at which a function can fire
- * @param {Function} func - The function to debounce
- * @param {number} wait - The debounce delay in milliseconds
- * @returns {Function} - The debounced function
- */
-const debounce = (func, wait) => {
-    let timeout;
-    return function (...args) {
-        clearTimeout(timeout);
-        timeout = setTimeout(() => func(...args), wait);
-    };
-};
-
-/**
  * Scrolls the active element or window to the top
  */
 const backToTop = () => {

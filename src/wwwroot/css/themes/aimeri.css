@@ -24,7 +24,10 @@
 }
 
 /* Personal Preference */
-// styles for mobile only
+.bottom-info-bar-component {
+    min-height: fit-content !important;
+    padding: 5px;
+}
 @media screen and (max-width: 600px) {
     .alt_prompt_region {
         position: relative;

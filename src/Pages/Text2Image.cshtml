@@ -963,45 +963,22 @@
 </div>
 
 @section Scripts {
-    <script src="js/LAB.min.js"></script>
-    <script>
-       $LAB.setGlobalDefaults({AllowDuplicates: true, CacheBust: true});
-        $LAB
-        .script("/js/jquery.min.js").wait()
-        .script("/js/bootstrap.min.js")
-        .script("/js/select2.min.js")
-        .script("/js/util.js?vary=@Utilities.VaryID")
-        .script("/js/translator.js?vary=@Utilities.VaryID")
-        .script("/js/site.js?vary=@Utilities.VaryID")
-        .script("/js/exifr.min.js")
-        .script("/js/genpage/mobile.js?vary=@Utilities.VaryID")
-        .script("/js/genpage/browsers.js?vary=@Utilities.VaryID")
-        .script("/js/genpage/logs.js?vary=@Utilities.VaryID")
-        .script("/js/genpage/ui_improvements.js?vary=@Utilities.VaryID")
-        .script("/js/genpage/generatehandler.js?vary=@Utilities.VaryID")
-        .script("/js/genpage/params.js?vary=@Utilities.VaryID")
-        .script("/js/genpage/image_editor.js?vary=@Utilities.VaryID")
-        .script("/js/genpage/main.js?vary=@Utilities.VaryID")
-        .script("/js/genpage/welcomemessages.js?vary=@Utilities.VaryID")
-        .script("/js/genpage/backends.js?vary=@Utilities.VaryID")
-        .script("/js/genpage/presets.js?vary=@Utilities.VaryID")
-        .script("/js/genpage/models.js?vary=@Utilities.VaryID")
-        .script("/js/genpage/utiltab.js?vary=@Utilities.VaryID")
-        .script("/js/genpage/usertab.js?vary=@Utilities.VaryID")
-        .script("/js/genpage/simpletab.js?vary=@Utilities.VaryID")
-        @{
-            var footerScriptsString = WebServer.PageFooterExtra.ToString();
-            var footerScripts = footerScriptsString.Split(new[] { "<script src=\"", "\"></script>" }, StringSplitOptions.RemoveEmptyEntries);
-            foreach (var script in footerScripts)
-            {
-                <text>.script("@Html.Raw(script.Trim())")</text>
-            }
-        }
-        .script("/js/genpage/settings_editor.js?vary=@Utilities.VaryID").wait(function () {
-            requestAnimationFrame(function() {
-                genpageLoad();
-            });
-        });
-    </script>
-    @* @WebServer.PageFooterExtra *@
+    <script src="/js/exifr.min.js"></script>
+    <script src="/js/genpage/mobile.js?vary=@Utilities.VaryID"></script>
+    <script src="/js/genpage/welcomemessages.js?vary=@Utilities.VaryID"></script>
+    <script src="/js/genpage/backends.js?vary=@Utilities.VaryID"></script>
+    <script src="/js/genpage/browsers.js?vary=@Utilities.VaryID"></script>
+    <script src="/js/genpage/presets.js?vary=@Utilities.VaryID"></script>
+    <script src="/js/genpage/models.js?vary=@Utilities.VaryID"></script>
+    <script src="/js/genpage/params.js?vary=@Utilities.VaryID"></script>
+    <script src="/js/genpage/utiltab.js?vary=@Utilities.VaryID"></script>
+    <script src="/js/genpage/usertab.js?vary=@Utilities.VaryID"></script>
+    <script src="/js/genpage/image_editor.js?vary=@Utilities.VaryID"></script>
+    <script src="/js/genpage/generatehandler.js?vary=@Utilities.VaryID"></script>
+    <script src="/js/genpage/simpletab.js?vary=@Utilities.VaryID"></script>
+    <script src="/js/genpage/main.js?vary=@Utilities.VaryID"></script>
+    <script src="/js/genpage/settings_editor.js?vary=@Utilities.VaryID"></script>
+    <script src="/js/genpage/logs.js?vary=@Utilities.VaryID"></script>
+    <script src="/js/genpage/ui_improvements.js?vary=@Utilities.VaryID"></script>
+    @WebServer.PageFooterExtra
 }

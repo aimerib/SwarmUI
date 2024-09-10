@@ -87,12 +87,21 @@
     <div class="tab-pane show active" style="line-height:0" id="Text2Image" role="tabpanel">
         <div class="t2i-top-bar-container" style="line-height:1.5">
             <div class="t2i-top-bar" id="t2i_top_bar">
-                <div class="modal modal-fullscreen imageview_popup_modal_background" id="image_fullview_modal">
-                    <div id="image_fullview_modal_content" style="width:fit-content;margin:auto;"></div>
-                    <div style="position: fixed; top: 1rem; right: 10%; width: 0; height: 0">
-                        <span class="text_button translate" onclick="imageFullView.close()">[Close]</span>
+                <div class="input-sidebar" id="input_sidebar">
+                    <span class="interrupt_line"></span>
+                    <div class="main_inputs_area_wrapper" id="main_inputs_area_wrapper">
+                        <input type="text translate" class="main_inputs_filter auto-text" id="main_inputs_filter" oninput="hideUnsupportableParams()" placeholder="Filter parameters..." />
+                        <div id="main_inputs_area"></div>
+                        <div id="main_inputs_area_advanced" class="main_inputs_area_advanced"></div>
+                        <div id="main_inputs_area_hidden" class="main_inputs_area_hidden"></div>
+                        <div style="height: 10rem;"></div> <!-- Spacer -->
+                    </div>
+                    <div class="advanced_input_checkbox">
+                        <input type="checkbox" id="advanced_options_checkbox" onclick="toggle_advanced()"/>
+                        <span onclick="toggle_advanced_checkbox_manual()"><span class="translate">Display Advanced Options?</span> <span id="advanced_hidden_count"></span></span>
                     </div>
                 </div>
+                <div class="t2i-top-split-bar splitter-bar" id="t2i-top-split-bar"><div class="t2i-split-quickbutton t2i-top-split-quickbutton" id="t2i-top-split-quickbutton">&#x21DA;</div></div>
                 <div class="main-image-area" id="main_image_area">
                     <div class="image_editor_input" id="image_editor_input" style="display:none;"></div><div class="image_editor_sizebar splitter-bar t2i-top-imageeditor-bar" id="image_editor_sizebar" style="display:none;"></div><div class="current_image" id="current_image"><div id="welcome_message" class="welcome_message">@(new HtmlString(Program.VersionUpdateMessage ?? Program.ServerSettings.UI.OverrideWelcomeMessage))</div>    <div class="mobile-expand-indicator" id="mobile_expand_indicator">&#9650; More Info</div></div><div class="t2i-top-split-bar splitter-bar" id="t2i-top-2nd-split-bar"></div>
                     <div class="current_image_batch" id="current_image_batch_wrapper">
@@ -166,21 +175,6 @@
                     <div class="sui-popover sui_popover_model" id="popover_interrupt">
                         <div class="sui_popover_model_button translate" onclick="mainGenHandler.doInterrupt()">Interrupt Current Session</div>
                         <div class="sui_popover_model_button translate" onclick="mainGenHandler.doInterrupt(true)">Interrupt All Sessions</div>
-                    </div>
-                </div>
-                <div class="t2i-top-split-bar splitter-bar" id="t2i-top-split-bar"><div class="t2i-split-quickbutton t2i-top-split-quickbutton" id="t2i-top-split-quickbutton">&#x21D2;</div></div>
-                <div class="input-sidebar" id="input_sidebar">
-                    <span class="interrupt_line"></span>
-                    <div class="main_inputs_area_wrapper" id="main_inputs_area_wrapper">
-                        <input type="text translate" class="main_inputs_filter auto-text" id="main_inputs_filter" oninput="hideUnsupportableParams()" placeholder="Filter parameters..." />
-                        <div id="main_inputs_area"></div>
-                        <div id="main_inputs_area_advanced" class="main_inputs_area_advanced"></div>
-                        <div id="main_inputs_area_hidden" class="main_inputs_area_hidden"></div>
-                        <div style="height: 10rem;"></div> <!-- Spacer -->
-                    </div>
-                    <div class="advanced_input_checkbox">
-                        <input type="checkbox" id="advanced_options_checkbox" onclick="toggle_advanced()"/>
-                        <span onclick="toggle_advanced_checkbox_manual()"><span class="translate">Display Advanced Options?</span> <span id="advanced_hidden_count"></span></span>
                     </div>
                 </div>
                 <div class="model-block-menu-button t2i-area-quicktools translate" onclick="doPopover('quicktools')">Quick Tools</div>
@@ -286,6 +280,12 @@
             <div class="tab-content" id="t2i_bottom_bar_content">
                 <div class="tab-pane show active genpage-bottom-tab" id="Image-History-Tab" role="tabpanel">
                     <div class="browser_container" id="image_history"></div>
+                </div>
+                <div class="modal modal-fullscreen imageview_popup_modal_background" id="image_fullview_modal">
+                    <div id="image_fullview_modal_content" style="width:fit-content;margin:auto;"></div>
+                    <div style="position: fixed; top: 1rem; right: 10%; width: 0; height: 0">
+                     <span class="text_button translate" onclick="imageFullView.close()">[Close]</span>
+                    </div>
                 </div>
                 <div class="tab-pane genpage-bottom-tab" id="Presets-Tab" role="tabpanel">
                     @WebUtil.ModalHeader("export_presets_modal", "Export Presets")

@@ -1467,7 +1467,7 @@ function pageSizer() {
         setCookie('barspot_pageBarTop2', pageBarTop2, 365);
         setCookie('barspot_pageBarMidPx', pageBarMid, 365);
         setCookie('barspot_imageEditorSizeBar', imageEditorSizeBarVal, 365);
-        let barTopLeft = leftShut ? `20px` : pageBarTop == -1 ? (isSmallWindow ? `14rem` : `28rem`) : `${pageBarTop}px`;
+        let barTopLeft = leftShut ? `0px` : pageBarTop == -1 ? (isSmallWindow ? `14rem` : `28rem`) : `${pageBarTop}px`;
         let barTopRight = pageBarTop2 == -1 ? (isSmallWindow ? `4rem` : `21rem`) : `${pageBarTop2}px`;
         let curImgWidth = `100vw - ${barTopLeft} - ${barTopRight} - 10px`;
         // TODO: this 'eval()' hack to read the size in advance is a bit cursed.
@@ -1499,7 +1499,7 @@ function pageSizer() {
         else {
             currentImageBatchCore.classList.remove('current_image_batch_core_small');
         }
-        topSplitButton.innerHTML = leftShut ? '&#x21DA;' : '&#x21DB;';
+        topSplitButton.innerHTML = leftShut ? '&#x21DB;' : '&#x21DA;';
         midSplitButton.innerHTML = midForceToBottom ? '&#x290A;' : '&#x290B;';
         let altHeight = altRegion.style.display == 'none' ? '0px' : `(${altText.offsetHeight + altNegText.offsetHeight + altImageRegion.offsetHeight}px + 2rem)`;
         if (pageBarMid != -1 || midForceToBottom) {
@@ -1509,7 +1509,7 @@ function pageSizer() {
             if (!isLikelyMobile()) inputSidebar.style.height = `calc(100vh - ${fixed})`;
             mainInputsAreaWrapper.style.height = `calc(100vh - ${fixed})`;
             mainImageArea.style.height = `calc(100vh - ${fixed})`;
-            currentImage.style.height = `calc(94vh - ${fixed} - ${altHeight})`;
+            currentImage.style.height = `calc(100vh - ${fixed} - ${altHeight})`;
             imageEditor.inputDiv.style.height = `calc(100vh - ${fixed} - ${altHeight})`;
             editorSizebar.style.height = `calc(100vh - ${fixed} - ${altHeight})`;
             currentImageBatch.style.height = `calc(100vh - ${fixed})`;
@@ -1618,10 +1618,10 @@ function pageSizer() {
     }, true);
     let moveEvt = (e, x, y) => {
         let offX = x;
-        offX = Math.max(Math.min(offX, window.innerWidth - 100), 10);
+        offX = Math.min(Math.max(offX, 100), window.innerWidth - 10);
         if (topDrag) {
-            pageBarTop = Math.min(window.innerWidth - offX - 5, 51 * 16);
-            setLeftShut(pageBarTop > window.innerWidth - 300);
+            pageBarTop = Math.min(offX - 5, 51 * 16);
+            setLeftShut(pageBarTop < 300);
             setPageBars();
         }
         if (topDrag2) {

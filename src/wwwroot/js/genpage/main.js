@@ -273,10 +273,16 @@ class ImageFullViewHelper {
         this.lastMouseY = 0;
         this.isDragging = false;
         this.didDrag = false;
+        this.initialScale = 1;
+        this.currentScale = 1;
+        this.initialDistance = 0;
         this.content.addEventListener('wheel', this.onWheel.bind(this));
         this.content.addEventListener('mousedown', this.onMouseDown.bind(this));
         document.addEventListener('mouseup', this.onGlobalMouseUp.bind(this));
         document.addEventListener('mousemove', this.onGlobalMouseMove.bind(this));
+        this.content.addEventListener('touchstart', this.onTouchStart.bind(this));
+        this.content.addEventListener('touchmove', this.onTouchMove.bind(this));
+        this.content.addEventListener('touchend', this.onTouchEnd.bind(this));
     }
 
     getImg() {
@@ -296,14 +302,14 @@ class ImageFullViewHelper {
     }
 
     onMouseDown(e) {
-        if (this.modal.style.display != 'block') {
+        if (this.modal.style.display != 'block' || !isLikelyMobile()) {
             return;
         }
         if (e.button == 2) { // right-click
             return;
         }
-        this.lastMouseX = e.clientX;
-        this.lastMouseY = e.clientY;
+        this.lastMouseX = e.touches ? e.touches[0].clientX : e.clientX;
+        this.lastMouseY = e.touches ? e.touches[0].clientY : e.clientY;
         this.isDragging = true;
         this.getImg().style.cursor = 'grabbing';
         e.preventDefault();
@@ -324,10 +330,77 @@ class ImageFullViewHelper {
         let img = this.getImg();
         let newLeft = this.getImgLeft() + xDiff;
         let newTop = this.getImgTop() + yDiff;
-        let overWidth = img.parentElement.offsetWidth / 2;
-        let overHeight = img.parentElement.offsetHeight / 2;
-        newLeft = Math.min(overWidth, Math.max(newLeft, img.parentElement.offsetWidth - img.width - overWidth));
-        newTop = Math.min(overHeight, Math.max(newTop, img.parentElement.offsetHeight - img.height - overHeight));
+
+        if (isLikelyMobile()) {
+            let wrap = img.parentElement;
+            let imgRect = img.getBoundingClientRect();
+            let wrapRect = wrap.getBoundingClientRect();
+
+            // Calculate how much the image overflows the wrapper
+            let horizontalOverflow = Math.max(0, imgRect.width - wrapRect.width);
+            let verticalOverflow = Math.max(0, imgRect.height - wrapRect.height);
+
+            // Get current left and top positions (relative to wrapper)
+            let currentLeft = this.getImgLeft();
+            let currentTop = this.getImgTop();
+
+            // Update new positions based on movement input (xDiff, yDiff)
+            let newLeft = currentLeft + xDiff;
+            let newTop = currentTop + yDiff;
+
+            // Clamp horizontal movement
+            if (imgRect.width > wrapRect.width) {
+                if (xDiff < 0) { // Moving left
+                    newLeft = Math.max(newLeft, -horizontalOverflow / 2);
+                } else { // Moving right
+                    newLeft = Math.min(newLeft, horizontalOverflow / 2);
+                }
+            } else {
+                newLeft = 0; // Center if image is smaller
+            }
+
+            // Clamp vertical movement
+            if (imgRect.height > wrapRect.height) {
+                if (yDiff < 0) { // Moving up
+                    newTop = Math.max(newTop, -verticalOverflow / 2);
+                } else { // Moving down
+                    newTop = Math.min(newTop, verticalOverflow / 2);
+                }
+            } else {
+                newTop = 0; // Center if image is smaller
+            }
+        } else {
+            let overWidth = img.parentElement.offsetWidth / 2;
+            let overHeight = img.parentElement.offsetHeight / 2;
+            newLeft = Math.min(overWidth, Math.max(newLeft, img.parentElement.offsetWidth - img.width - overWidth));
+            newTop = Math.min(overHeight, Math.max(newTop, img.parentElement.offsetHeight - img.height - overHeight));
+        }
+        img.style.left = `${newLeft}px`;
+        img.style.top = `${newTop}px`;
+    }
+
+    updateImagePosition() {
+        let img = this.getImg();
+        let wrap = img.parentElement;
+        let imgRect = img.getBoundingClientRect();
+        let wrapRect = wrap.getBoundingClientRect();
+
+        let newLeft, newTop;
+
+        // Ensure at least one horizontal edge touches
+        if (imgRect.width > wrapRect.width) {
+            newLeft = Math.min(0, Math.max(wrapRect.width - imgRect.width, this.getImgLeft()));
+        } else {
+            newLeft = (wrapRect.width - imgRect.width) / 2; // Center horizontally
+        }
+
+        // Ensure at least one vertical edge touches
+        if (imgRect.height > wrapRect.height) {
+            newTop = Math.min(0, Math.max(wrapRect.height - imgRect.height, this.getImgTop()));
+        } else {
+            newTop = (wrapRect.height - imgRect.height) / 2; // Center vertically
+        }
+
         img.style.left = `${newLeft}px`;
         img.style.top = `${newTop}px`;
     }
@@ -337,10 +410,20 @@ class ImageFullViewHelper {
             return;
         }
         this.detachImg();
-        let xDiff = e.clientX - this.lastMouseX;
-        let yDiff = e.clientY - this.lastMouseY;
-        this.lastMouseX = e.clientX;
-        this.lastMouseY = e.clientY;
+        let clientX, clientY;
+        if (e.touches) {
+            // Touch event
+            clientX = e.touches[0].clientX;
+            clientY = e.touches[0].clientY;
+        } else {
+            // Mouse event
+            clientX = e.clientX;
+            clientY = e.clientY;
+        }
+        let xDiff = clientX - this.lastMouseX;
+        let yDiff = clientY - this.lastMouseY;
+        this.lastMouseX = clientX;
+        this.lastMouseY = clientY;
         this.moveImg(xDiff, yDiff);
         if (Math.abs(xDiff) > 1 || Math.abs(yDiff) > 1) {
             this.didDrag = true;
@@ -415,6 +498,43 @@ class ImageFullViewHelper {
         img.style.height = `${newHeight}%`;
     }
 
+    onTouchStart(e) {
+        if (e.touches.length === 2) {
+            this.initialDistance = this.getDistance(e.touches[0], e.touches[1]);
+            this.initialScale = this.currentScale;
+        } else if (e.touches.length === 1) {
+            this.onMouseDown(e);
+        }
+    }
+
+    onTouchMove(e) {
+        if (e.touches.length === 2) {
+            e.preventDefault();
+            const currentDistance = this.getDistance(e.touches[0], e.touches[1]);
+            const scale = currentDistance / this.initialDistance;
+            this.currentScale = Math.min(Math.max(this.initialScale * scale, 1), 4);
+            this.setScale(this.currentScale);
+            this.updateImagePosition();
+        } else if (e.touches.length === 1) {
+            this.onGlobalMouseMove(e);
+        }
+    }
+
+    onTouchEnd(e) {
+        if (e.touches.length === 0) {
+            this.onGlobalMouseUp(e);
+        }
+    }
+
+    getDistance(touch1, touch2) {
+        return Math.hypot(touch1.pageX - touch2.pageX, touch1.pageY - touch2.pageY);
+    }
+
+    setScale(scale) {
+        const img = this.getImg();
+        img.style.transform = `scale(${scale})`;
+    }
+
     showImage(src, metadata) {
         let isVideo = src.endsWith(".mp4") || src.endsWith(".webm") || src.endsWith(".mov");
         let imgHtml = `<img class="imageview_popup_modal_img" id="imageview_popup_modal_img" style="cursor:grab;max-width:100%;object-fit:contain;" src="${src}">`;
@@ -432,12 +552,34 @@ class ImageFullViewHelper {
             </div>
         </div>`;
         this.modalJq.modal('show');
+        if (isLikelyMobile()) {
+            document.body.style.overflow = 'hidden'; // Prevent body scrolling
+
+            const img = this.getImg();
+            img.style.position = 'relative';
+            img.style.left = '0px';
+            img.style.top = '0px';
+            img.style.cursor = 'grab';
+
+            this.currentScale = 1;
+            this.setScale(1);
+        }
     }
 
     close() {
         this.isDragging = false;
         this.didDrag = false;
         this.modalJq.modal('hide');
+        if (isLikelyMobile()) {
+            document.body.style.overflow = '';
+            this.currentScale = 1;
+            const img = this.getImg();
+            if (img) {
+                img.style.transform = '';
+                img.style.left = '0px';
+                img.style.top = '0px';
+            }
+        }
     }
 
     isOpen() {
@@ -875,7 +1017,51 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
         curImg.appendChild(img);
         curImg.appendChild(extrasWrapper);
     }
-    if (isLikelyMobile()) setupMobileCurrentImageExtras();
+    if (isLikelyMobile()) {
+        setupMobileCurrentImageExtras();
+
+        img.style.maxWidth = '100%';
+        img.style.height = 'auto';
+        extrasWrapper.style.width = '100%';
+
+        // Enable pinch-to-zoom for the image
+        img.style.touchAction = 'pinch-zoom';
+
+        // Add event listeners for pinch-to-zoom
+        let currentScale = 1;
+        let startDistance = 0;
+
+        img.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 2) {
+                startDistance = Math.hypot(
+                    e.touches[0].pageX - e.touches[1].pageX,
+                    e.touches[0].pageY - e.touches[1].pageY
+                );
+            }
+        });
+
+        img.addEventListener('touchmove', (e) => {
+            if (e.touches.length === 2) {
+                e.preventDefault(); // Prevent default only for two-finger gestures
+                const currentDistance = Math.hypot(
+                    e.touches[0].pageX - e.touches[1].pageX,
+                    e.touches[0].pageY - e.touches[1].pageY
+                );
+                const scale = currentDistance / startDistance;
+                currentScale *= scale;
+                currentScale = Math.min(Math.max(1, currentScale), 4); // Limit zoom between 1x and 4x
+                img.style.transform = `scale(${currentScale})`;
+                startDistance = currentDistance;
+            }
+        });
+
+        img.addEventListener('touchend', () => {
+            if (currentScale === 1) {
+                img.style.transform = '';
+            }
+        });
+
+    }
 }
 
 function appendImage(container, imageSrc, batchId, textPreview, metadata = '', type = 'legacy', prepend = true) {
@@ -2351,6 +2537,40 @@ function imageInputHandler() {
             }
         }
     });
+    if (isLikelyMobile()) {
+        imageArea.style.touchAction = 'none';
+
+        imageArea.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 1) {
+                e.preventDefault();
+                let touch = e.touches[0];
+                let mouseEvent = new MouseEvent('mousedown', {
+                    clientX: touch.clientX,
+                    clientY: touch.clientY
+                });
+                imageArea.dispatchEvent(mouseEvent);
+            }
+        });
+
+        imageArea.addEventListener('touchmove', (e) => {
+            if (e.touches.length === 1) {
+                e.preventDefault();
+                let touch = e.touches[0];
+                let mouseEvent = new MouseEvent('mousemove', {
+                    clientX: touch.clientX,
+                    clientY: touch.clientY
+                });
+                imageArea.dispatchEvent(mouseEvent);
+            }
+        });
+
+        imageArea.addEventListener('touchend', (e) => {
+            if (e.touches.length === 0) {
+                let mouseEvent = new MouseEvent('mouseup', {});
+                imageArea.dispatchEvent(mouseEvent);
+            }
+        });
+    }
 }
 imageInputHandler();
 

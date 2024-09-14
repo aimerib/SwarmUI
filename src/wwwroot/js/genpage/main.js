@@ -70,7 +70,7 @@ function toggleAutoLoadImages() {
 function clickImageInBatch(div) {
     let imgElem = div.getElementsByTagName('img')[0];
     if (currentImgSrc == div.dataset.src) {
-        imageFullView.showImage(div.dataset.src, div.dataset.metadata);
+        showFullImage(div.dataset.src, div.dataset.metadata);
         return;
     }
     setCurrentImage(div.dataset.src, div.dataset.metadata, div.dataset.batch_id ?? '', imgElem.dataset.previewGrow == 'true');
@@ -207,6 +207,259 @@ function formatMetadata(metadata) {
     appendObject(data);
     return result;
 }
+/** Mobile-specific helper class for handling image full view modal */
+class MobileImageFullViewHelper {
+    constructor() {
+        // Create mobile-specific modal elements
+        this.createMobileModal();
+
+        // Bind touch event handlers
+        this.bindEvents();
+
+        // Initialize transformation states
+        this.currentScale = 1;
+        this.initialDistance = 0;
+        this.lastScale = 1;
+        this.isDragging = false;
+        this.dragStart = { x: 0, y: 0 };
+        this.imagePosition = { x: 0, y: 0 };
+        this.swipeStartY = 0;
+        this.swipeEndY = 0;
+    }
+
+    /** Creates the mobile modal structure dynamically */
+    createMobileModal() {
+        // Check if the mobile modal already exists to prevent duplicates
+        if (document.getElementById('mobile_image_fullview_modal')) return;
+
+        // Create modal container
+        this.modal = document.createElement('div');
+        this.modal.id = 'mobile_image_fullview_modal';
+        this.modal.className = 'mobile-modal';
+        this.modal.style.display = 'none';
+        this.modal.style.position = 'fixed';
+        this.modal.style.top = '0';
+        this.modal.style.left = '0';
+        this.modal.style.width = '100%';
+        this.modal.style.height = '100%';
+        this.modal.style.backgroundColor = 'var(--background-soft)';
+        this.modal.style.zIndex = '10000';
+        this.modal.style.justifyContent = 'center';
+        this.modal.style.alignItems = 'center';
+        this.modal.style.flexDirection = 'column';
+        this.modal.style.overflow = 'hidden';
+
+        // Create close button
+        this.closeButton = document.createElement('button');
+        this.closeButton.id = 'mobile_image_fullview_close';
+        this.closeButton.innerHTML = '&times;';
+        this.closeButton.className = 'mobile-close-button';
+        this.modal.appendChild(this.closeButton);
+        // this.closeButton.addEventListener('click', (e) => {
+        //     e.stopPropagation();
+        //     this.close();
+        // });
+
+
+        // Create image container
+        this.imageContainer = document.createElement('div');
+        this.imageContainer.id = 'mobile_image_fullview_container';
+        this.imageContainer.style.position = 'relative';
+        this.imageContainer.style.flex = '1';
+        this.imageContainer.style.display = 'flex';
+        this.imageContainer.style.justifyContent = 'center';
+        this.imageContainer.style.alignItems = 'center';
+        this.imageContainer.style.overflow = 'hidden';
+        this.imageContainer.style.width = '100%';
+        this.imageContainer.style.height = '100%';
+
+        // Create image element
+        this.img = document.createElement('img');
+        this.img.id = 'mobile_image_fullview_img';
+        this.img.style.maxWidth = '100%';
+        this.img.style.maxHeight = '100%';
+        this.img.style.transform = 'translate(0px, 0px) scale(1)';
+        this.img.style.transition = 'transform 0.1s ease-out'; // Reduced transition duration for responsiveness
+
+        // Create metadata container
+        this.metadataContainer = document.createElement('div');
+        this.metadataContainer.id = 'mobile_image_fullview_metadata';
+        this.metadataContainer.style.color = 'var(--text)';
+        this.metadataContainer.style.padding = '10px';
+        this.metadataContainer.style.overflowY = 'auto';
+        this.metadataContainer.style.maxHeight = '150px';
+        this.metadataContainer.style.width = '90%';
+        this.metadataContainer.style.textAlign = 'center';
+        this.metadataContainer.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+        this.metadataContainer.style.borderRadius = '8px';
+        this.metadataContainer.style.marginTop = '10px';
+
+        // Append elements
+        this.imageContainer.appendChild(this.img);
+        this.modal.appendChild(this.imageContainer);
+        this.modal.appendChild(this.metadataContainer);
+        document.body.appendChild(this.modal);
+    }
+
+    /** Binds touch and click event listeners for gestures and controls */
+    bindEvents() {
+        // Handle pinch-to-zoom
+        this.modal.addEventListener('touchstart', this.onPinchStart.bind(this), { passive: false });
+        this.modal.addEventListener('touchmove', this.onPinchMove.bind(this), { passive: false });
+        this.modal.addEventListener('touchend', this.onPinchEnd.bind(this), { passive: false });
+
+        // Handle drag for panning
+        this.modal.addEventListener('touchstart', this.onDragStart.bind(this), { passive: false });
+        this.modal.addEventListener('touchmove', this.onDragMove.bind(this), { passive: false });
+        this.modal.addEventListener('touchend', this.onDragEnd.bind(this), { passive: false });
+
+        // // Handle swipe down to close
+        // this.modal.addEventListener('touchstart', this.onSwipeStart.bind(this), { passive: false });
+        // this.modal.addEventListener('touchmove', this.onSwipeMove.bind(this), { passive: false });
+        // this.modal.addEventListener('touchend', this.onSwipeEnd.bind(this), { passive: false });
+
+        // Close modal when clicking the close button
+        this.closeButton.addEventListener('touchend', (e) => {
+            e.stopPropagation();
+            this.close();
+        });
+    }
+
+    /** Display the image in full-screen mode with metadata */
+    showImage(src, metadata) {
+        this.img.src = `${window.location.origin}/${src}`;
+        this.metadataContainer.innerHTML = formatMetadata(metadata);
+        this.modal.style.display = 'flex';
+
+        // Reset transformations
+        this.currentScale = 1;
+        this.imagePosition = { x: 0, y: 0 };
+        this.updateImageTransform();
+    }
+
+    /** Close the mobile modal */
+    close() {
+        this.modal.style.display = 'none';
+    }
+
+    /** Update the image's CSS transform based on current scale and position */
+    updateImageTransform() {
+        this.img.style.transform = `translate(${this.imagePosition.x}px, ${this.imagePosition.y}px) scale(${this.currentScale})`;
+    }
+
+    /** Handle pinch-to-zoom touch start */
+    onPinchStart(e) {
+        if (e.touches.length === 2) {
+            e.preventDefault();
+            this.initialDistance = this.getDistance(e.touches[0], e.touches[1]);
+            this.lastScale = this.currentScale;
+        }
+    }
+
+    /** Handle pinch-to-zoom touch move */
+    onPinchMove(e) {
+        if (e.touches.length === 2) {
+            e.preventDefault();
+            let currentDistance = this.getDistance(e.touches[0], e.touches[1]);
+            let scaleChange = currentDistance / this.initialDistance;
+            this.currentScale = Math.min(Math.max(this.lastScale * scaleChange, 1), 4); // Limit scale between 1 and 4
+            this.updateImageTransform();
+        }
+    }
+
+    /** Handle pinch-to-zoom touch end */
+    onPinchEnd(e) {
+        if (e.touches.length < 2) {
+            this.lastScale = this.currentScale;
+        }
+    }
+
+    /** Handle drag start for panning */
+    onDragStart(e) {
+        if (e.touches.length === 1 && this.currentScale > 1) { // Only allow drag if scaled up
+            e.preventDefault();
+            this.isDragging = true;
+            this.dragStart.x = e.touches[0].clientX - this.imagePosition.x;
+            this.dragStart.y = e.touches[0].clientY - this.imagePosition.y;
+        }
+    }
+
+    /** Handle drag move for panning */
+    onDragMove(e) {
+        if (this.isDragging && e.touches.length === 1 && this.currentScale > 1) {
+            e.preventDefault();
+            let newX = e.touches[0].clientX - this.dragStart.x;
+            let newY = e.touches[0].clientY - this.dragStart.y;
+
+            // Calculate boundaries
+            const containerRect = this.imageContainer.getBoundingClientRect();
+            const imgRect = this.img.getBoundingClientRect();
+            const scaledWidth = imgRect.width;
+            const scaledHeight = imgRect.height;
+            const containerWidth = containerRect.width;
+            const containerHeight = containerRect.height;
+
+            // Calculate max allowed translation
+            const maxTranslateX = (scaledWidth - containerWidth) / 2;
+            const maxTranslateY = (scaledHeight - containerHeight) / 2;
+
+            // Clamp the new positions
+            newX = Math.min(maxTranslateX, Math.max(newX, -maxTranslateX));
+            newY = Math.min(maxTranslateY, Math.max(newY, -maxTranslateY));
+
+            this.imagePosition.x = newX;
+            this.imagePosition.y = newY;
+            this.updateImageTransform();
+        }
+    }
+
+    /** Handle drag end for panning */
+    onDragEnd(e) {
+        if (this.isDragging) {
+            this.isDragging = false;
+        }
+    }
+
+    /** Handle swipe start */
+    onSwipeStart(e) {
+        if (e.touches.length === 1) {
+            this.swipeStartY = e.touches[0].clientY;
+        }
+    }
+
+    /** Handle swipe move */
+    onSwipeMove(e) {
+        if (e.touches.length === 1) {
+            this.swipeEndY = e.touches[0].clientY;
+            let deltaY = this.swipeEndY - this.swipeStartY;
+            if (deltaY > 100) { // Threshold for swipe down
+                this.close();
+            }
+        }
+    }
+
+    /** Handle swipe end */
+    onSwipeEnd(e) {
+        // Reset swipe positions
+        this.swipeStartY = 0;
+        this.swipeEndY = 0;
+    }
+
+    /** Calculate distance between two touch points */
+    getDistance(touch1, touch2) {
+        let dx = touch1.pageX - touch2.pageX;
+        let dy = touch1.pageY - touch2.pageY;
+        return Math.hypot(dx, dy);
+    }
+
+    /** Calculate the center point between two touches */
+    getTouchCenter(touch1, touch2) {
+        return {
+            x: (touch1.pageX + touch2.pageX) / 2,
+            y: (touch1.pageY + touch2.pageY) / 2
+        };
+    }
+}
 
 /** Central helper class to handle the 'image full view' modal. */
 class ImageFullViewHelper {
@@ -217,6 +470,10 @@ class ImageFullViewHelper {
         this.modalJq = $('#image_fullview_modal');
         this.noClose = false;
         document.addEventListener('click', (e) => {
+            console.log('click', e.target);
+            if (e.target.closest('#current_image button') || e.touches?.length > 0) {
+                return; // Do not interfere with button clicks
+            }
             if (e.target.tagName == 'BODY') {
                 return; // it's impossible on the genpage to actually click body, so this indicates a bugged click, so ignore it
             }
@@ -239,13 +496,17 @@ class ImageFullViewHelper {
         this.content.addEventListener('mousedown', this.onMouseDown.bind(this));
         document.addEventListener('mouseup', this.onGlobalMouseUp.bind(this));
         document.addEventListener('mousemove', this.onGlobalMouseMove.bind(this));
-        this.content.addEventListener('touchstart', this.onTouchStart.bind(this));
-        this.content.addEventListener('touchmove', this.onTouchMove.bind(this));
-        this.content.addEventListener('touchend', this.onTouchEnd.bind(this));
+        // this.content.addEventListener('touchstart', this.onTouchStart.bind(this));
+        // this.content.addEventListener('touchmove', this.onTouchMove.bind(this));
+        // this.content.addEventListener('touchend', this.onTouchEnd.bind(this));
     }
 
     getImg() {
         return getRequiredElementById('imageview_popup_modal_img');
+    }
+
+    getCurrentImage() {
+        return getRequiredElementById('current_image');
     }
 
     getHeightPercent() {
@@ -261,18 +522,43 @@ class ImageFullViewHelper {
     }
 
     onMouseDown(e) {
-        if (this.modal.style.display != 'block' || !isLikelyMobile()) {
+        if (this.modal.style.display != 'block') {
             return;
         }
         if (e.button == 2) { // right-click
             return;
         }
-        this.lastMouseX = e.touches ? e.touches[0].clientX : e.clientX;
-        this.lastMouseY = e.touches ? e.touches[0].clientY : e.clientY;
-        this.isDragging = true;
-        this.getImg().style.cursor = 'grabbing';
+        this.startDrag(e.clientX, e.clientY);
         e.preventDefault();
         e.stopPropagation();
+    }
+
+    onTouchStart(e) {
+        console.log('onTouchStart', e.target);
+        let img = this.getCurrentImage();
+        if (this.modal.style.display != 'block') {
+            return;
+        }
+        // If the touch is on a button or its child, do not interfere
+        if (e.target.closest('.current-image-buttons button')) {
+            return; // Allow button touch events to propagate naturally
+        }
+
+        if (e.touches.length === 2 && e.target === img) {
+            this.initialDistance = this.getDistance(e.touches[0], e.touches[1]);
+            this.initialScale = this.currentScale;
+        } else if (e.touches.length === 1 && e.target === img) {
+            this.startDrag(e.touches[0].clientX, e.touches[0].clientY);
+            e.preventDefault();
+            e.stopPropagation();
+        }
+    }
+
+    startDrag(clientX, clientY) {
+        this.lastMouseX = clientX;
+        this.lastMouseY = clientY;
+        this.isDragging = true;
+        this.getImg().style.cursor = 'grabbing';
     }
 
     onGlobalMouseUp(e) {
@@ -457,30 +743,24 @@ class ImageFullViewHelper {
         img.style.height = `${newHeight}%`;
     }
 
-    onTouchStart(e) {
-        if (e.touches.length === 2) {
-            this.initialDistance = this.getDistance(e.touches[0], e.touches[1]);
-            this.initialScale = this.currentScale;
-        } else if (e.touches.length === 1) {
-            this.onMouseDown(e);
-        }
-    }
-
     onTouchMove(e) {
-        if (e.touches.length === 2) {
+        let img = this.getCurrentImage();
+        if (e.touches.length === 2 && e.target === img) {
             e.preventDefault();
             const currentDistance = this.getDistance(e.touches[0], e.touches[1]);
             const scale = currentDistance / this.initialDistance;
             this.currentScale = Math.min(Math.max(this.initialScale * scale, 1), 4);
             this.setScale(this.currentScale);
             this.updateImagePosition();
-        } else if (e.touches.length === 1) {
+        } else if (e.touches.length === 1 && e.target === img) {
             this.onGlobalMouseMove(e);
         }
     }
 
     onTouchEnd(e) {
-        if (e.touches.length === 0) {
+        console.log('onTouchEnd', e.target);
+        let img = this.getCurrentImage();
+        if (e.touches.length === 0 && e.target === img) {
             this.onGlobalMouseUp(e);
         }
     }
@@ -507,7 +787,7 @@ class ImageFullViewHelper {
         </div>`;
         this.modalJq.modal('show');
         if (isLikelyMobile()) {
-            document.body.style.overflow = 'hidden'; // Prevent body scrolling
+            // document.body.style.overflow = 'hidden'; // Prevent body scrolling
 
             const img = this.getImg();
             img.style.position = 'relative';
@@ -543,6 +823,27 @@ class ImageFullViewHelper {
 
 let imageFullView = new ImageFullViewHelper();
 
+// New Mobile Viewer
+let mobileImageFullView = null;
+
+// Initialize viewers based on device type
+function initializeViewers() {
+    if (isLikelyMobile()) {
+        mobileImageFullView = new MobileImageFullViewHelper();
+    }
+}
+
+initializeViewers();
+
+/** Unified function to display full-screen images based on device type */
+function showFullImage(src, metadata) {
+    if (isLikelyMobile() && mobileImageFullView) {
+        mobileImageFullView.showImage(src, metadata);
+    } else {
+        imageFullView.showImage(src, metadata);
+    }
+}
+
 function shiftToNextImagePreview(next = true, expand = false) {
     let curImgElem = document.getElementById('current_image_img');
     if (!curImgElem) {
@@ -566,8 +867,10 @@ function shiftToNextImagePreview(next = true, expand = false) {
         divs[newIndex].querySelector('img').click();
         if (expand) {
             divs[newIndex].querySelector('img').click();
-            imageFullView.showImage(currentImgSrc, currentMetadataVal);
-            imageFullView.pasteState(expandedState);
+            showFullImage(currentImgSrc, currentMetadataVal);
+            if (!isLikelyMobile()) {
+                imageFullView.pasteState(expandedState);
+            }
         }
         return;
     }
@@ -590,8 +893,10 @@ function shiftToNextImagePreview(next = true, expand = false) {
     let block = findParentOfClass(newImg, 'image-block');
     setCurrentImage(block.dataset.src, block.dataset.metadata, block.dataset.batch_id, newImg.dataset.previewGrow == 'true');
     if (expand) {
-        imageFullView.showImage(block.dataset.src, block.dataset.metadata);
-        imageFullView.pasteState(expandedState);
+        showFullImage(block.dataset.src, block.dataset.metadata);
+        if (!isLikelyMobile()) {
+            imageFullView.pasteState(expandedState);
+        }
     }
 }
 
@@ -751,14 +1056,12 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
     img.dataset.batch_id = batchId;
     img.addEventListener('click', (event) => {
         event.preventDefault();
-        imageFullView.showImage(src, metadata);
+        showFullImage(src, metadata);
     });
 
     img.addEventListener('touchend', (event) => {
         event.preventDefault();
-
-            imageFullView.showImage(src, metadata);
-
+        showFullImage(src, metadata);
     });
 
     img.addEventListener('touchmove', (event) => {
@@ -768,6 +1071,7 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
     img.addEventListener('touchstart', (event) => {
         img.dataset.moved = false;
     });
+
     let extrasWrapper = isReuse ? document.getElementById('current-image-extras-wrapper') : createDiv('current-image-extras-wrapper', 'current-image-extras-wrapper');
     extrasWrapper.innerHTML = '';
     let buttons = createDiv(null, 'current-image-buttons');
@@ -996,7 +1300,7 @@ function gotImageResult(image, metadata, batchId) {
     if (!document.getElementById('current_image_img') || autoLoadImagesElem.checked) {
         setCurrentImage(src, metadata, batchId, false, true);
         if (getUserSetting('AutoSwapImagesIncludesFullView') && imageFullView.isOpen()) {
-            imageFullView.showImage(src, metadata);
+            showFullImage(src, metadata);
         }
     }
     return batch_div;
@@ -2407,38 +2711,38 @@ function imageInputHandler() {
         }
     });
     if (isLikelyMobile()) {
-        imageArea.style.touchAction = 'none';
+        // imageArea.style.touchAction = 'none';
 
-        imageArea.addEventListener('touchstart', (e) => {
-            if (e.touches.length === 1) {
-                e.preventDefault();
-                let touch = e.touches[0];
-                let mouseEvent = new MouseEvent('mousedown', {
-                    clientX: touch.clientX,
-                    clientY: touch.clientY
-                });
-                imageArea.dispatchEvent(mouseEvent);
-            }
-        });
+        // imageArea.addEventListener('touchstart', (e) => {
+        //     if (e.touches.length === 1) {
+        //         e.preventDefault();
+        //         let touch = e.touches[0];
+        //         let mouseEvent = new MouseEvent('mousedown', {
+        //             clientX: touch.clientX,
+        //             clientY: touch.clientY
+        //         });
+        //         imageArea.dispatchEvent(mouseEvent);
+        //     }
+        // });
 
-        imageArea.addEventListener('touchmove', (e) => {
-            if (e.touches.length === 1) {
-                e.preventDefault();
-                let touch = e.touches[0];
-                let mouseEvent = new MouseEvent('mousemove', {
-                    clientX: touch.clientX,
-                    clientY: touch.clientY
-                });
-                imageArea.dispatchEvent(mouseEvent);
-            }
-        });
+        // imageArea.addEventListener('touchmove', (e) => {
+        //     if (e.touches.length === 1) {
+        //         e.preventDefault();
+        //         let touch = e.touches[0];
+        //         let mouseEvent = new MouseEvent('mousemove', {
+        //             clientX: touch.clientX,
+        //             clientY: touch.clientY
+        //         });
+        //         imageArea.dispatchEvent(mouseEvent);
+        //     }
+        // });
 
-        imageArea.addEventListener('touchend', (e) => {
-            if (e.touches.length === 0) {
-                let mouseEvent = new MouseEvent('mouseup', {});
-                imageArea.dispatchEvent(mouseEvent);
-            }
-        });
+        // imageArea.addEventListener('touchend', (e) => {
+        //     if (e.touches.length === 0) {
+        //         let mouseEvent = new MouseEvent('mouseup', {});
+        //         imageArea.dispatchEvent(mouseEvent);
+        //     }
+        // });
     }
 }
 imageInputHandler();

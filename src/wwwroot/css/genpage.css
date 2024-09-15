@@ -1583,12 +1583,14 @@ body {
         padding: unset;
         margin: auto;
         overflow: hidden;
-        width: max-content !important;
-        max-height: 100% !important;
+        /* width: max-content !important; */
+        /* max-height: 100% !important; */
         display: flex;
-        flex-wrap: wrap;
+        /* flex-wrap: wrap; */
         justify-content: center;
         gap: 10px;
+        height: max-content;
+        overflow-x: auto;
     }
 
     .current-image-img {
@@ -1687,7 +1689,7 @@ body {
     .image-block img {
         width: 100%;
         height: 100%;
-        object-fit: contain;
+        object-fit: cover;
     }
 
     .model-block {

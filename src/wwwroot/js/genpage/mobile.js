@@ -388,6 +388,8 @@ const handleGenerateClickMobile = (event) => {
     closeAllFlyouts(); // Close all open flyouts
     mainGenHandler.doGenerateButton(event);
     backToTop();
+    event.stopPropagation();
+    event.preventDefault();
 };
 
 let isUpdatingExtras = false;

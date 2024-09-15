@@ -393,34 +393,39 @@ class GenPageBrowserClass {
         );
     }
 
+    /**
+     * Renders the pagination controls.
+     */
     renderPaginationControls() {
         const paginationDiv = document.createElement("div");
         paginationDiv.className = "pagination-controls";
 
+        // Helper function to create page buttons
         const createPageButton = (page, isActive = false) => {
             const button = document.createElement("button");
             button.textContent = page;
             button.className = "page-button";
             if (isActive) {
                 button.classList.add("active");
-                button.addEventListener("click", () => {
+                button.addEventListener("click", (e) => {
+                    e.stopPropagation();
                     const newPage = prompt("Enter page number:", this.currentPage);
                     if (newPage && !isNaN(newPage) && newPage > 0 && newPage <= this.totalPages) {
                         this.currentPage = parseInt(newPage);
-                        // this.centralizePaginationAndFiltering();
                         this.build(this.lastPath, null, this.filteredItems);
                     }
                 });
             } else {
-                button.addEventListener("click", () => {
+                button.addEventListener("click", (e) => {
+                    e.stopPropagation();
                     this.currentPage = page;
-                    // this.centralizePaginationAndFiltering();
                     this.build(this.lastPath, null, this.filteredItems);
                 });
             }
             return button;
         };
 
+        // Helper function to create ellipsis
         const createEllipsis = () => {
             const ellipsis = document.createElement("span");
             ellipsis.textContent = "...";
@@ -428,6 +433,7 @@ class GenPageBrowserClass {
             return ellipsis;
         };
 
+        // Previous button
         const prevButton = document.createElement("button");
         prevButton.textContent = "←";
         prevButton.className = "nav-button prev-button";
@@ -435,13 +441,13 @@ class GenPageBrowserClass {
         prevButton.addEventListener("click", () => {
             if (this.currentPage > 1) {
                 this.currentPage--;
-                // this.centralizePaginationAndFiltering();
                 this.build(this.lastPath, null, this.filteredItems);
             }
         });
         paginationDiv.appendChild(prevButton);
 
-        if (this.currentPage!== 1) {
+        // First few page buttons
+        if (this.currentPage !== 1) {
             paginationDiv.appendChild(createPageButton(1));
         }
 
@@ -449,7 +455,6 @@ class GenPageBrowserClass {
         const sideButtons = 1; // Buttons on each side of the center
 
         if (this.totalPages <= totalButtons) {
-            // If total pages fit within the display, show all pages
             for (let i = 2; i < this.totalPages; i++) {
                 paginationDiv.appendChild(createPageButton(i, i === this.currentPage));
             }
@@ -460,25 +465,29 @@ class GenPageBrowserClass {
             if (leftMost > 2) {
                 paginationDiv.appendChild(createEllipsis());
             }
+
             for (let i = leftMost; i < this.currentPage; i++) {
                 paginationDiv.appendChild(createPageButton(i));
             }
 
-            // Current page (always in the center when possible)
+            // Current page
             paginationDiv.appendChild(createPageButton(this.currentPage, true));
 
             for (let i = this.currentPage + 1; i <= rightMost; i++) {
                 paginationDiv.appendChild(createPageButton(i));
             }
+
             if (rightMost < this.totalPages - 1) {
                 paginationDiv.appendChild(createEllipsis());
             }
         }
 
-        if (this.totalPages > 1 && this.currentPage!== this.totalPages) {
+        // Last few page buttons
+        if (this.totalPages > 1 && this.currentPage !== this.totalPages) {
             paginationDiv.appendChild(createPageButton(this.totalPages));
         }
 
+        // Next button
         const nextButton = document.createElement("button");
         nextButton.textContent = "→";
         nextButton.className = "nav-button next-button";
@@ -486,7 +495,6 @@ class GenPageBrowserClass {
         nextButton.addEventListener("click", () => {
             if (this.currentPage < this.totalPages) {
                 this.currentPage++;
-                // this.centralizePaginationAndFiltering();
                 this.build(this.lastPath, null, this.filteredItems);
             }
         });

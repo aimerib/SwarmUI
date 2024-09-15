@@ -327,6 +327,10 @@ class MobileImageFullViewHelper {
 
         // Close modal when clicking outside the image
         this.modal.addEventListener('touchstart', (e) => {
+            let actionButtons = this.modal.querySelector('.current-image-buttons');
+            if (actionButtons && actionButtons.contains(e.target)) {
+                return;
+            }
             if (e.target === this.metadataContainer || this.metadataContainer.contains(e.target)) {
                 return
             }
@@ -340,6 +344,7 @@ class MobileImageFullViewHelper {
 
     /** Display the image in full-screen mode with metadata */
     showImage(src, metadata) {
+        createImageActionButtons(src, this.img, metadata, this.modal, true);
         this.img.src = `${window.location.origin}/${src}`;
         this.metadataContainer.innerHTML = formatMetadata(metadata);
         this.modal.style.display = 'flex';

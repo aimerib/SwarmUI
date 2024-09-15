@@ -290,29 +290,9 @@ class MobileImageFullViewHelper {
         this.modal.style.flexDirection = 'column';
         this.modal.style.overflow = 'hidden';
 
-        // Create close button
-        this.closeButton = document.createElement('button');
-        this.closeButton.id = 'mobile_image_fullview_close';
-        this.closeButton.innerHTML = '&times;';
-        this.closeButton.className = 'mobile-close-button';
-        this.modal.appendChild(this.closeButton);
-        // this.closeButton.addEventListener('click', (e) => {
-        //     e.stopPropagation();
-        //     this.close();
-        // });
-
-
         // Create image container
         this.imageContainer = document.createElement('div');
         this.imageContainer.id = 'mobile_image_fullview_container';
-        this.imageContainer.style.position = 'relative';
-        this.imageContainer.style.flex = '1';
-        this.imageContainer.style.display = 'flex';
-        this.imageContainer.style.justifyContent = 'center';
-        this.imageContainer.style.alignItems = 'center';
-        this.imageContainer.style.overflow = 'hidden';
-        this.imageContainer.style.width = '100%';
-        this.imageContainer.style.height = '100%';
 
         // Create image element
         this.img = document.createElement('img');
@@ -325,15 +305,6 @@ class MobileImageFullViewHelper {
         // Create metadata container
         this.metadataContainer = document.createElement('div');
         this.metadataContainer.id = 'mobile_image_fullview_metadata';
-        this.metadataContainer.style.color = 'var(--text)';
-        this.metadataContainer.style.padding = '10px';
-        this.metadataContainer.style.overflowY = 'auto';
-        this.metadataContainer.style.maxHeight = '150px';
-        this.metadataContainer.style.width = '90%';
-        this.metadataContainer.style.textAlign = 'center';
-        this.metadataContainer.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
-        this.metadataContainer.style.borderRadius = '8px';
-        this.metadataContainer.style.marginTop = '10px';
 
         // Append elements
         this.imageContainer.appendChild(this.img);
@@ -354,15 +325,16 @@ class MobileImageFullViewHelper {
         this.modal.addEventListener('touchmove', this.onDragMove.bind(this), { passive: false });
         this.modal.addEventListener('touchend', this.onDragEnd.bind(this), { passive: false });
 
-        // // Handle swipe down to close
-        // this.modal.addEventListener('touchstart', this.onSwipeStart.bind(this), { passive: false });
-        // this.modal.addEventListener('touchmove', this.onSwipeMove.bind(this), { passive: false });
-        // this.modal.addEventListener('touchend', this.onSwipeEnd.bind(this), { passive: false });
-
-        // Close modal when clicking the close button
-        this.closeButton.addEventListener('touchend', (e) => {
-            e.stopPropagation();
-            this.close();
+        // Close modal when clicking outside the image
+        this.modal.addEventListener('touchstart', (e) => {
+            if (e.target === this.metadataContainer || this.metadataContainer.contains(e.target)) {
+                return
+            }
+            if (e.target !== this.img && e.touches.length < 2) {
+                this.close();
+                e.preventDefault();
+                e.stopPropagation();
+            }
         });
     }
 
@@ -537,9 +509,6 @@ class ImageFullViewHelper {
         this.content.addEventListener('mousedown', this.onMouseDown.bind(this));
         document.addEventListener('mouseup', this.onGlobalMouseUp.bind(this));
         document.addEventListener('mousemove', this.onGlobalMouseMove.bind(this));
-        // this.content.addEventListener('touchstart', this.onTouchStart.bind(this));
-        // this.content.addEventListener('touchmove', this.onTouchMove.bind(this));
-        // this.content.addEventListener('touchend', this.onTouchEnd.bind(this));
     }
 
     getImg() {
@@ -2841,40 +2810,6 @@ function imageInputHandler() {
             }
         }
     });
-    if (isLikelyMobile()) {
-        // imageArea.style.touchAction = 'none';
-
-        // imageArea.addEventListener('touchstart', (e) => {
-        //     if (e.touches.length === 1) {
-        //         e.preventDefault();
-        //         let touch = e.touches[0];
-        //         let mouseEvent = new MouseEvent('mousedown', {
-        //             clientX: touch.clientX,
-        //             clientY: touch.clientY
-        //         });
-        //         imageArea.dispatchEvent(mouseEvent);
-        //     }
-        // });
-
-        // imageArea.addEventListener('touchmove', (e) => {
-        //     if (e.touches.length === 1) {
-        //         e.preventDefault();
-        //         let touch = e.touches[0];
-        //         let mouseEvent = new MouseEvent('mousemove', {
-        //             clientX: touch.clientX,
-        //             clientY: touch.clientY
-        //         });
-        //         imageArea.dispatchEvent(mouseEvent);
-        //     }
-        // });
-
-        // imageArea.addEventListener('touchend', (e) => {
-        //     if (e.touches.length === 0) {
-        //         let mouseEvent = new MouseEvent('mouseup', {});
-        //         imageArea.dispatchEvent(mouseEvent);
-        //     }
-        // });
-    }
 }
 imageInputHandler();
 

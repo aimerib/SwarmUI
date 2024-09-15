@@ -223,6 +223,7 @@ function handleAction (element, handler, isLongPressEnabled = false) {
         }
     };
 
+    if (!element) return;
     if ("ontouchstart" in window) {
         element.addEventListener("touchstart", touchStart);
         element.addEventListener("touchmove", touchMove, { passive: true });
@@ -425,24 +426,57 @@ function setupMobileCurrentImageExtras () {
     if (!extrasWrapper.classList.contains("open")) {
         extrasWrapper.classList.add("closed");
     }
+    const controls = document.createElement('div');
+    controls.className = 'image-controls';
+    Object.assign(controls.style, {
+        position: 'absolute',
+        bottom: '10px',
+        display: 'flex',
+        gap: '10px',
+        padding: '5px 10px',
+        borderRadius: '5px',
+    });
+    controls.innerHTML = `
+        <button class="image-info-toggle">Image Info</button>
+    `;
+    handleAction(controls.querySelector('.image-info-toggle'), () => {
+        extrasWrapper.classList.toggle("open-image-info");
+        extrasWrapper.classList.toggle("closed");
+    });
+    current_image.appendChild(controls);
 
-    if (!current_image.querySelector("#mobile_expand_indicator")) {
-        let newExpandIndicator = document.createElement("div");
-        newExpandIndicator.id = "mobile_expand_indicator";
-        newExpandIndicator.className = "mobile-expand-indicator";
-        newExpandIndicator.textContent = "▲ More Info";
-        handleAction(newExpandIndicator, function () {
-            extrasWrapper.classList.toggle("open");
-            extrasWrapper.classList.toggle("closed");
-            newExpandIndicator.classList.toggle("expanded");
-            newExpandIndicator.textContent = extrasWrapper.classList.contains(
-                "open"
-            )
-                ? "▼ Less Info"
-                : "▲ More Info";
-        });
-        current_image.appendChild(newExpandIndicator);
-    }
+    // Toggle image info
+    // controls.querySelector('.image-info-toggle').addEventListener('click', () => {
+    //     if (extrasWrapper) {
+    //         extrasWrapper.classList.toggle("open");
+    //         extrasWrapper.classList.toggle("closed");
+    //         // extrasWrapper.classList.toggle('show');
+    //         if (extrasWrapper.classList.contains('open')) {
+    //             extrasWrapper.style.display = 'block';
+    //         } else {
+    //             extrasWrapper.style.display = 'none';
+    //         }
+    //     }
+    // });
+
+
+    // if (!current_image.querySelector("#mobile_expand_indicator")) {
+    //     let newExpandIndicator = document.createElement("div");
+    //     newExpandIndicator.id = "mobile_expand_indicator";
+    //     newExpandIndicator.className = "mobile-expand-indicator";
+    //     newExpandIndicator.textContent = "▲ More Info";
+    //     handleAction(newExpandIndicator, function () {
+    //         extrasWrapper.classList.toggle("open");
+    //         extrasWrapper.classList.toggle("closed");
+    //         newExpandIndicator.classList.toggle("expanded");
+    //         newExpandIndicator.textContent = extrasWrapper.classList.contains(
+    //             "open"
+    //         )
+    //             ? "▼ Less Info"
+    //             : "▲ More Info";
+    //     });
+    //     current_image.appendChild(newExpandIndicator);
+    // }
 
     current_image.appendChild(extrasWrapper);
     // Set up the toggle action
@@ -720,3 +754,167 @@ document.addEventListener('click', (event) => {
         closeAllFlyouts();
     }
 });
+
+
+// document.addEventListener('DOMContentLoaded', () => {
+//     const currentImageContainer = document.querySelector('#current_image');
+
+//     if (!currentImageContainer) return;
+
+//     /**
+//      * Applies necessary styles to center the image and layout controls.
+//      */
+//     const applyStyles = () => {
+//         Object.assign(currentImageContainer.style, {
+//             position: 'relative',
+//             display: 'flex',
+//             flexDirection: 'column',
+//             alignItems: 'center',
+//             justifyContent: 'center',
+//             width: '100%',
+//             height: '100%',
+//             overflow: 'hidden',
+//         });
+
+//         currentImageContainer.querySelectorAll('img').forEach(img => {
+//             Object.assign(img.style, {
+//                 maxWidth: '100%',
+//                 maxHeight: '80%', // Adjust as needed to reserve space for controls
+//                 display: 'block',
+//                 margin: '0 auto',
+//                 transition: 'transform 0.3s ease',
+//             });
+//         });
+
+//         const extrasWrapper = document.querySelector('.current-image-extras-wrapper');
+//         if (extrasWrapper) {
+//             Object.assign(extrasWrapper.style, {
+//                 width: '100%',
+//                 height: 'auto',
+//                 maxHeight: '20%', // Adjust to fill remaining space
+//                 overflow: 'auto',
+//                 transition: 'height 0.3s ease',
+//             });
+//         }
+//     };
+
+//     /**
+//      * Function to add image controls if img is available.
+//      */
+//     const addImageControls = () => {
+//         const img = currentImageContainer.querySelector('img');
+//         const extrasWrapper = document.querySelector('.current-image-extras-wrapper');
+
+//         // Check if img exists and controls are not already added
+//         if (img && !currentImageContainer.querySelector('.image-controls')) {
+//             console.log('Image found:', img);
+
+//             // Create and append image controls
+//             const controls = document.createElement('div');
+//             controls.className = 'image-controls';
+//             Object.assign(controls.style, {
+//                 position: 'absolute',
+//                 bottom: '10px',
+//                 display: 'flex',
+//                 gap: '10px',
+//                 padding: '5px 10px',
+//                 borderRadius: '5px',
+//             });
+//             controls.innerHTML = `
+//                 <button class="image-info-toggle">Image Info</button>
+//             `;
+//             currentImageContainer.appendChild(controls);
+
+//             // Toggle image info
+//             controls.querySelector('.image-info-toggle').addEventListener('click', () => {
+//                 if (extrasWrapper) {
+//                     extrasWrapper.classList.toggle("open");
+//                     extrasWrapper.classList.toggle("closed");
+//                     // extrasWrapper.classList.toggle('show');
+//                     if (extrasWrapper.classList.contains('open')) {
+//                         extrasWrapper.style.display = 'block';
+//                     } else {
+//                         extrasWrapper.style.display = 'none';
+//                     }
+//                 }
+//             });
+
+//             // Apply centering styles
+//             applyStyles();
+//         }
+//     };
+
+//     /**
+//      * Function to remove image controls.
+//      */
+//     const removeImageControls = () => {
+//         const controls = currentImageContainer.querySelector('.image-controls');
+//         if (controls) {
+//             controls.remove();
+//         }
+
+//         const img = currentImageContainer.querySelector('img');
+//         if (img) {
+//             img.style.transform = `scale(1)`; // Reset zoom
+//         }
+//     };
+
+//     /**
+//      * Initialize MutationObserver to watch for changes in #current_image.
+//      */
+//     const observer = new MutationObserver((mutations) => {
+//         mutations.forEach((mutation) => {
+//             if (mutation.type === 'childList') {
+//                 const img = currentImageContainer.querySelector('img');
+//                 if (img) {
+//                     addImageControls();
+//                 } else {
+//                     removeImageControls();
+//                 }
+//             } else if (mutation.type === 'attributes' && mutation.attributeName === 'src') {
+//                 const img = currentImageContainer.querySelector('img');
+//                 if (img) {
+//                     addImageControls();
+//                 } else {
+//                     removeImageControls();
+//                 }
+//             }
+//         });
+//     });
+
+//     // Configuration of the observer:
+//     const config = {
+//         childList: true, // Listen for added or removed child elements
+//         attributes: true, // Listen for attribute changes
+//         subtree: true, // Observe all descendants
+//     };
+
+//     // Start observing the target node for configured mutations
+//     observer.observe(currentImageContainer, config);
+
+//     // Function to handle image load
+//     const handleImageLoad = () => {
+//         addImageControls();
+//     };
+
+//     // Initial check in case #current_image already has an img element
+//     const initialImg = currentImageContainer.querySelector('img');
+//     if (initialImg) {
+//         if (initialImg.complete) {
+//             // If image is already loaded
+//             addImageControls();
+//         } else {
+//             // If image is not loaded yet, add an event listener
+//             initialImg.addEventListener('load', handleImageLoad);
+//         }
+//     }
+
+//     /**
+//      * Ensure extrasWrapper is properly sized when toggled.
+//      */
+//     const extrasWrapper = document.querySelector('.current-image-extras-wrapper');
+//     if (extrasWrapper) {
+//         extrasWrapper.style.display = 'none'; // Initially hide
+//         extrasWrapper.style.transition = 'height 0.3s ease';
+//     }
+// });

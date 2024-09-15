@@ -442,7 +442,6 @@ class ImageFullViewHelper {
         this.modalJq = $('#image_fullview_modal');
         this.noClose = false;
         document.addEventListener('click', (e) => {
-            console.log('click', e.target);
             if (e.target.closest('#current_image button') || e.touches?.length > 0) {
                 return; // Do not interfere with button clicks
             }

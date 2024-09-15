@@ -34,18 +34,23 @@ const safeExecute = (func, fallback = () => {}) => {
  * Mobile Detection Functions
  * These functions help determine if the user is on a mobile device.
  */
-const isMobile = () =>
-    window.matchMedia("(max-width: 768px)").matches &&
-    ("ontouchstart" in window ||
-        navigator.maxTouchPoints > 0 ||
+function isMobile () {
+    return window.matchMedia("(max-width: 768px)").matches &&
+        ("ontouchstart" in window ||
+            navigator.maxTouchPoints > 0 ||
         navigator.msMaxTouchPoints > 0);
-const isMobileUserAgent = () =>
-    /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+}
+function isMobileUserAgent () {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
         navigator.userAgent
     );
-const isIOS = () =>
-    /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-const isLikelyMobile = () => isMobile() || isMobileUserAgent();
+}
+function isIOS () {
+    return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+}
+function isLikelyMobile () {
+    return isMobile() || isMobileUserAgent();
+}
 
 /**
  * Utility function to add multiple event listeners to an element
@@ -59,31 +64,89 @@ const addMultipleEventListeners = (element, events, handler) => {
     );
 };
 
-/**
- * Toggles the visibility of an element
- * @param {HTMLElement} element - The element to toggle
- */
-const toggleElement = (element) => {
-    element.classList.toggle("closed");
-    element.style.height = element.classList.contains("closed")
-        ? "0px"
-        : "100%";
-    element.style.display = element.classList.contains("closed")
-        ? "none !important"
-        : "block !important";
-    element.style.paddingBottom = element.classList.contains("closed")
-        ? "0px"
-        : "150px";
-};
+// /**
+//  * Toggles the visibility of an element
+//  * @param {HTMLElement} element - The element to toggle
+//  */
+// function toggleElement (element) {
+//     element.classList.toggle("closed");
+//     element.style.height = element.classList.contains("closed")
+//         ? "0px"
+//         : "100%";
+//     element.style.display = element.classList.contains("closed")
+//         ? "none !important"
+//         : "block !important";
+//     element.style.paddingBottom = element.classList.contains("closed")
+//         ? "0px"
+//         : "150px";
+// };
 
-// Convenience functions for toggling specific elements
-const toggleBottomBar = () => toggleElement(bottomBar);
-const toggleInputSidebar = () => toggleElement(inputSidebar);
+/**
+ * Opens a specific flyout.
+ * @param {HTMLElement} flyout - The flyout element to open.
+ */
+function openFlyout(flyout) {
+    // First, close all other flyouts
+    closeAllFlyouts();
+
+    // Open the desired flyout if it's not already open
+    if (flyout.classList.contains('closed')) {
+        flyout.classList.remove('closed');
+        flyout.style.height = "100%";
+        flyout.style.display = "block";
+        flyout.style.paddingBottom = "150px";
+    }
+}
+
+/**
+ * Closes a specific flyout.
+ * @param {HTMLElement} flyout - The flyout element to close.
+ */
+function closeFlyout(flyout) {
+    if (!flyout.classList.contains('closed')) {
+        flyout.classList.add('closed');
+        flyout.style.height = "0px";
+        flyout.style.display = "none";
+        flyout.style.paddingBottom = "0px";
+    }
+}
+
+/**
+ * Toggles the Input Sidebar flyout.
+ */
+function toggleInputSidebar() {
+    if (inputSidebar.classList.contains('closed')) {
+        openFlyout(inputSidebar);
+    } else {
+        closeFlyout(inputSidebar);
+    }
+}
+
+/**
+ * Toggles the Bottom Bar flyout.
+ */
+function toggleBottomBar() {
+    if (bottomBar.classList.contains('closed')) {
+        openFlyout(bottomBar);
+    } else {
+        closeFlyout(bottomBar);
+    }
+}
+
+/**
+ * Closes all open flyouts.
+ */
+function closeAllFlyouts() {
+    const flyouts = document.querySelectorAll('.mobile-flyout');
+    flyouts.forEach(flyout => {
+        closeFlyout(flyout);
+    });
+}
 
 /**
  * Scrolls the active element or window to the top
  */
-const backToTop = () => {
+function backToTop () {
     const element = document.querySelector(".mobile-flyout:not(.closed)") || tabContent || window;
     smoothScrollTo(element, 0, 300);
 };
@@ -94,7 +157,7 @@ const backToTop = () => {
  * @param {number} to - The target scroll position
  * @param {number} duration - The duration of the scroll animation
  */
-const smoothScrollTo = (element, to, duration) => {
+function smoothScrollTo (element, to, duration) {
     const start = element.scrollTop;
     const change = to - start;
     let currentTime = 0;
@@ -114,7 +177,7 @@ const smoothScrollTo = (element, to, duration) => {
 /**
  * Easing function for smooth scrolling
  */
-const easeInOutQuad = (t, b, c, d) => {
+function easeInOutQuad (t, b, c, d) {
     t /= d/2;
     if (t < 1) return c/2*t*t + b;
     t--;
@@ -127,7 +190,7 @@ const easeInOutQuad = (t, b, c, d) => {
  * @param {Function} handler - The handler function for the action
  * @param {boolean} isLongPressEnabled - Whether long press should be enabled
  */
-const handleAction = (element, handler, isLongPressEnabled = false) => {
+function handleAction (element, handler, isLongPressEnabled = false) {
     let touchStartTime;
     let hasMoved = false;
     let longPressTimer;
@@ -172,7 +235,7 @@ const handleAction = (element, handler, isLongPressEnabled = false) => {
 /**
  * Disables zoom on text fields for iOS devices
  */
-const disableIosTextFieldZoom = () => {
+function disableIosTextFieldZoom () {
     const viewportMeta = document.querySelector("meta[name=viewport]");
     if (
         viewportMeta &&
@@ -188,7 +251,7 @@ const disableIosTextFieldZoom = () => {
 /**
  * Initializes the mobile UI
  */
-const initializeMobileUI = () => {
+function initializeMobileUI () {
     console.log("Initializing mobile UI...");
     if (isLikelyMobile()) {
         safeExecute(setupTabSelector);
@@ -200,7 +263,7 @@ const initializeMobileUI = () => {
 /**
  * Sets up the mobile tab selector
  */
-const setupTabSelector = () => {
+function setupTabSelector () {
     const tabLinks = document.querySelectorAll(
         "#bottombartabcollection .nav-link"
     );
@@ -218,7 +281,7 @@ const setupTabSelector = () => {
 /**
  * Sets up the mobile UI elements
  */
-const setupMobileUI = () => {
+function setupMobileUI () {
     safeExecute(() => {
         // Use MutationObserver to watch for version_display
         const observer = new MutationObserver((mutations) => {
@@ -244,7 +307,8 @@ const setupMobileUI = () => {
         setupBackToTopButton();
         setupGenButtonMobile();
         setupMobileViewHeight();
-        setupNavigationDrawer();
+        setupBottomNavigationBar();
+        setupFab();
         setupCopyrightMessage();
     });
 };
@@ -254,7 +318,7 @@ const setupMobileUI = () => {
  * @param {HTMLElement} element - The element to set up as a flyout
  * @param {Function} toggleFunction - The function to toggle the flyout
  */
-const setupFlyout = (element, toggleFunction) => {
+function setupFlyout (element, toggleFunction) {
     if (element) {
         element.classList.add("mobile-flyout", "closed");
         styleElement(element);
@@ -265,7 +329,7 @@ const setupFlyout = (element, toggleFunction) => {
  * Updates the z-index of flyout elements
  * @param {string} selectedFlyoutId - The ID of the selected flyout
  */
-const updateFlyoutZIndex = (selectedFlyoutId) => {
+function updateFlyoutZIndex (selectedFlyoutId) {
     ["t2i_bottom_bar", "input_sidebar"].forEach((id) => {
         const element = document.getElementById(id);
         if (element) {
@@ -278,7 +342,7 @@ const updateFlyoutZIndex = (selectedFlyoutId) => {
  * Applies styles to a flyout element
  * @param {HTMLElement} element - The element to style
  */
-const styleElement = (element) => {
+function styleElement (element) {
     Object.assign(element.style, {
         lineHeight: "1.5",
         display: "block !important",
@@ -301,7 +365,7 @@ const styleElement = (element) => {
 /**
  * Sets up the back-to-top button
  */
-const setupBackToTopButton = () => {
+function setupBackToTopButton () {
     document
         .getElementById("btn-back-to-top")
         ?.addEventListener("click", backToTop, { passive: true });
@@ -310,7 +374,7 @@ const setupBackToTopButton = () => {
 /**
  * Sets up the mobile generate button
  */
-const setupGenButtonMobile = () => {
+function setupGenButtonMobile () {
     if (genButtonMobile) {
         handleAction(genButtonMobile, handleGenerateClickMobile, true);
     }
@@ -321,15 +385,14 @@ const setupGenButtonMobile = () => {
  * @param {Event} event - The click event
  */
 const handleGenerateClickMobile = (event) => {
+    closeAllFlyouts(); // Close all open flyouts
     mainGenHandler.doGenerateButton(event);
-    bottomBar?.classList.add("closed");
-    inputSidebar?.classList.add("closed");
     backToTop();
 };
 
 let isUpdatingExtras = false;
 
-const setupMobileCurrentImageExtras = () => {
+function setupMobileCurrentImageExtras () {
     if (isUpdatingExtras) return;
     isUpdatingExtras = true;
 
@@ -413,7 +476,7 @@ if (currentImage) {
  * Switches the mobile tab
  * @param {Event} e - The change event
  */
-const switchMobileTab = (e) => {
+function switchMobileTab (e)  {
     document
         .querySelector(
             `#bottombartabcollection .nav-link[href="${e?.target?.value}"]`
@@ -485,169 +548,173 @@ function setupCopyrightMessage() {
     }
 }
 
-function setupNavigationDrawer() {
-    const drawerHTML = `
-        <div id="mobile-nav-drawer" class="mobile-nav-drawer">
-            <div class="drawer-handle">
-                <div class="drawer-icon">
-                    <i class="bi bi-chevron-compact-up"></i>
-                </div>
+/**
+ * Sets up the Bottom Navigation Bar with a central gap for the FAB
+ */
+function setupBottomNavigationBar() {
+    const navBarHTML = `
+        <nav id="bottom-navigation-bar" class="bottom-navigation-bar">
+            <div class="nav-left">
+                <button data-action="toggleInputSidebar" class="nav-button">
+                    <i class="bi bi-pencil-square"></i>
+                    <span>Inputs</span>
+                </button>
+                <button data-action="toggleBottomBar" class="nav-button">
+                    <i class="bi bi-tools"></i>
+                    <span>Extras</span>
+                </button>
             </div>
-            <nav class="drawer-content">
-                <button data-action="toggleInputSidebar">Inputs</button>
-                <button data-action="toggleBottomBar">Extras</button>
-                <button data-action="showOptions">Options</button>
-                <button data-action="interrupt">Interrupt</button>
-                <button data-action="backToTop">Top</button>
-            </nav>
-        </div>
+            <div class="nav-center">
+                <!-- Central gap for FAB -->
+            </div>
+            <div class="nav-right">
+                <button data-action="showOptions" class="nav-button">
+                    <i class="bi bi-gear-wide-connected"></i>
+                    <span>Options</span>
+                </button>
+                <button data-action="interrupt" class="nav-button">
+                    <i class="bi bi-stop-circle"></i>
+                    <span>Interrupt</span>
+                </button>
+            </div>
+        </nav>
     `;
 
-    document.body.insertAdjacentHTML("beforeend", drawerHTML);
+    document.body.insertAdjacentHTML("beforeend", navBarHTML);
 
-    const drawer = document.getElementById("mobile-nav-drawer");
-    if (drawer) {
-        Object.assign(drawer.style, {
+    const navBar = document.getElementById("bottom-navigation-bar");
+    if (navBar) {
+        Object.assign(navBar.style, {
             position: "fixed",
             bottom: "0",
             left: "0",
             width: "100%",
+            height: "60px",
             backgroundColor: "#2a2a2a",
-            transition: "transform 0.3s ease-out",
-            transform: "translateY(calc(100% - 50px))",
-            zIndex: "1000",
-            boxShadow:
-                "0px 8px 10px 1px hsla(0,0%,0%,0.14),0px 3px 14px 2px hsla(0,0%,0%,0.12),0px 5px 5px -3px hsla(0,0%,0%,0.2)",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            padding: "10px 20px",
+            boxShadow: "0 -1px 5px rgba(0, 0, 0, 0.3)",
+            zIndex: "1001",
+            borderTopLeftRadius: "20px",
+            borderTopRightRadius: "20px",
         });
 
-        drawer.querySelector('.drawer-content')?.addEventListener('click', (e) => {
-            if (e.target.tagName === 'BUTTON') {
-                const action = e.target.dataset.action;
-                if (action) {
-                    switch (action) {
-                        case "toggleInputSidebar":
-                            toggleInputSidebar();
-                            updateFlyoutZIndex("input_sidebar");
-                            drawer?.classList.toggle("open");
-                            drawer.style.transform = drawer?.classList.contains("open")
-                                ? "translateY(calc(100% + -170px))"
-                                : "translateY(calc(100% - 50px))";
-                            updateDrawerIcon("flyout-open");
-                            break;
-                        case "toggleBottomBar":
-                            toggleBottomBar();
-                            updateFlyoutZIndex("t2i_bottom_bar");
-                            drawer?.classList.toggle("open");
-                            drawer.style.transform = drawer?.classList.contains("open")
-                                ? "translateY(calc(100% + -170px))"
-                                : "translateY(calc(100% - 50px))";
-                            updateDrawerIcon("flyout-open");
-                            break;
-                        case "showOptions":
-                            doPopover("generate_center");
-                            drawer?.classList.toggle("open");
-                            drawer.style.transform = drawer?.classList.contains("open")
-                                ? "translateY(calc(100% + -170px))"
-                                : "translateY(calc(100% - 50px))";
-                            updateDrawerIcon("closed");
-                            break;
-                        case "interrupt":
-                            mainGenHandler.doInterrupt();
-                            drawer?.classList.toggle("open");
-                            drawer.style.transform = drawer?.classList.contains("open")
-                                ? "translateY(calc(100% + -170px))"
-                                : "translateY(calc(100% - 50px))";
-                            updateDrawerIcon("closed");
-                            break;
-                        case "backToTop":
-                            backToTop();
-                            drawer?.classList.toggle("open");
-                            drawer.style.transform = drawer?.classList.contains("open")
-                                ? "translateY(calc(100% + -170px))"
-                                : "translateY(calc(100% - 50px))";
-                            updateDrawerIcon("closed");
-                            break;
-                    }
-                }
-            }
-        });
+        const navLeft = navBar.querySelector('.nav-left');
+        const navRight = navBar.querySelector('.nav-right');
+        const navCenter = navBar.querySelector('.nav-center');
 
-        const handle = drawer.querySelector(".drawer-handle");
-        if (handle) {
-            Object.assign(handle.style, {
-                height: "50px",
-                backgroundColor: "#2a2a2a",
-                borderTopLeftRadius: "20px",
-                borderTopRightRadius: "20px",
+        [navLeft, navRight].forEach(section => {
+            Object.assign(section.style, {
                 display: "flex",
-                justifyContent: "center",
+                gap: "20px",
                 alignItems: "center",
+            });
+        });
+
+        Object.assign(navCenter.style, {
+            width: "70px",
+            position: "relative",
+        });
+
+        const buttons = navBar.querySelectorAll('.nav-button');
+        buttons.forEach(button => {
+            Object.assign(button.style, {
+                background: "none",
+                border: "none",
+                color: "#fff",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                fontSize: "12px",
                 cursor: "pointer",
             });
 
-            const icon = handle.querySelector(".drawer-icon");
+            const icon = button.querySelector('i');
             if (icon) {
                 Object.assign(icon.style, {
-                    width: "50px",
-                    height: "50px",
-                    display: "flex",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    fontSize: "24px",
-                    color: "#fff",
-                    transition: "transform 0.3s ease",
+                    fontSize: "15px",
+                    marginBottom: "4px",
                 });
             }
+        });
 
-            const content = drawer.querySelector(".drawer-content");
-            if (content) {
-                Object.assign(content.style, {
-                    padding: "20px",
-                    maxHeight: "calc(30dvh - 50px)",
-                    overflowY: "auto",
-                });
-            }
-        }
-
-        handleAction(handle, () => {
-            const bottomBar = document.getElementById("t2i_bottom_bar");
-            const inputSidebar = document.getElementById("input_sidebar");
-
-            if (
-                !bottomBar?.classList.contains("closed") ||
-                !inputSidebar?.classList.contains("closed")
-            ) {
-                if (!bottomBar?.classList.contains("closed")) {
-                    toggleBottomBar();
-                }
-                if (!inputSidebar?.classList.contains("closed")) {
-                    toggleInputSidebar();
-                }
-                drawer.style.transform = "translateY(calc(100% - 50px))";
-                drawer.classList.remove("open");
-                updateDrawerIcon("closed");
-            } else {
-                drawer.classList.toggle("open");
-                if (drawer.classList.contains("open")) {
-                    drawer.style.transform = "translateY(calc(100% + -170px))";
-                    updateDrawerIcon("open");
-                } else {
-                    drawer.style.transform = "translateY(calc(100% - 50px))";
-                    updateDrawerIcon("closed");
-                }
+        navBar.addEventListener('click', (e) => {
+            if (e.target.closest('.nav-button')) {
+                const action = e.target.closest('.nav-button').dataset.action;
+                handleNavBarAction(action);
             }
         });
     }
-}
+};
 
-const updateDrawerIcon = (currState) => {
-    const drawerStates = {
-        "flyout-open": "bi bi-x",
-        open: "bi bi-chevron-compact-down",
-        closed: "bi bi-chevron-compact-up",
-    };
-    const icon = document.querySelector("#mobile-nav-drawer .drawer-icon i");
-    if (icon) {
-        icon.className = drawerStates[currState];
+/**
+ * Handles actions triggered from the Bottom Navigation Bar
+ * @param {string} action - The action identifier
+ */
+function handleNavBarAction (action) {
+    switch (action) {
+        case "toggleInputSidebar":
+            toggleInputSidebar();
+            updateFlyoutZIndex("input_sidebar");
+            break;
+        case "toggleBottomBar":
+            toggleBottomBar();
+            updateFlyoutZIndex("t2i_bottom_bar");
+            break;
+        case "showOptions":
+            doPopover("generate_center");
+            break;
+        case "interrupt":
+            mainGenHandler.doInterrupt();
+            break;
+        default:
+            console.warn(`Unhandled action: ${action}`);
     }
 };
+
+/**
+ * Sets up the Floating Action Button (FAB) in the center of the Bottom Navigation Bar
+ */
+function setupFab() {
+    if (genButtonMobile) {
+        Object.assign(genButtonMobile.style, {
+            position: "fixed",
+            bottom: "15px !important", // Half of navbar height to overlap
+            left: "47%",
+            transform: "translateX(-50%)",
+            width: "56px",
+            height: "56px",
+            borderRadius: "50%",
+            backgroundColor: "#6200ee",
+            color: "#fff",
+            border: "none",
+            boxShadow: "0 2px 5px rgba(0,0,0,0.3)",
+            zIndex: "1002", // Above the nav bar
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            cursor: "pointer",
+        });
+
+        // Add FAB icon (using Bootstrap Icons)
+        genButtonMobile.innerHTML = '<i class="bi bi-plus-lg"></i>';
+
+        // Handle FAB click
+        handleAction(genButtonMobile, handleGenerateClickMobile, true);
+    }
+};
+
+/**
+ * Closes all flyouts when the user clicks or taps outside of them.
+ */
+document.addEventListener('click', (event) => {
+    const isFlyoutButton = event.target.closest('.nav-button');
+    const isFab = event.target.closest('#genButtonMobile');
+    const isFlyout = event.target.closest('.mobile-flyout');
+
+    if (!isFlyoutButton && !isFab && !isFlyout) {
+        closeAllFlyouts();
+    }
+});

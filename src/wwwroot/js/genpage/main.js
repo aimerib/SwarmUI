@@ -225,6 +225,52 @@ class MobileImageFullViewHelper {
         this.imagePosition = { x: 0, y: 0 };
         this.swipeStartY = 0;
         this.swipeEndY = 0;
+        this.rafId = null;
+
+        // Initialize variables for double-tap detection
+        this.lastTap = 0;
+        this.tapTimeout = 300; // Maximum time between taps for double-tap
+        this.tapDistance = 50; // Maximum distance (in pixels) between taps for double-tap
+
+        // Bind the double-tap event
+        this.bindDoubleTap();
+    }
+
+    /** Binds double-tap event listener */
+    bindDoubleTap() {
+        this.modal.addEventListener('touchend', this.onDoubleTap.bind(this));
+    }
+
+    /** Handles double-tap gesture to reset scale and re-center image */
+    onDoubleTap(e) {
+        const currentTime = new Date().getTime();
+        const tapLength = currentTime - this.lastTap;
+        const touch = e.changedTouches[0];
+        const tapX = touch.clientX;
+        const tapY = touch.clientY;
+
+        if (tapLength < this.tapTimeout && tapLength > 0) {
+            // Check distance between taps
+            const deltaX = tapX - this.lastTapX;
+            const deltaY = tapY - this.lastTapY;
+            const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+
+            if (distance < this.tapDistance) {
+                // Double-tap detected
+                this.resetImage();
+            }
+        }
+
+        this.lastTap = currentTime;
+        this.lastTapX = tapX;
+        this.lastTapY = tapY;
+    }
+
+    /** Resets the image scale to 1 and re-centers it */
+    resetImage() {
+        this.currentScale = 1;
+        this.imagePosition = { x: 0, y: 0 };
+        this.updateImageTransform();
     }
 
     /** Creates the mobile modal structure dynamically */
@@ -258,7 +304,7 @@ class MobileImageFullViewHelper {
         this.img.id = 'mobile_image_fullview_img';
         this.img.style.maxWidth = '100%';
         this.img.style.maxHeight = '100%';
-        this.img.style.transform = 'translate(0px, 0px) scale(1)';
+        this.img.style.transform = 'translate3d(0px, 0px, 0) scale(1)';
         this.img.style.transition = 'transform 0.1s ease-out'; // Reduced transition duration for responsiveness
 
         // Create metadata container
@@ -321,7 +367,7 @@ class MobileImageFullViewHelper {
 
     /** Update the image's CSS transform based on current scale and position */
     updateImageTransform() {
-        this.img.style.transform = `translate(${this.imagePosition.x}px, ${this.imagePosition.y}px) scale(${this.currentScale})`;
+        this.img.style.transform = `translate3d(${this.imagePosition.x}px, ${this.imagePosition.y}px, 0) scale(${this.currentScale})`;
     }
 
     /** Handle pinch-to-zoom touch start */
@@ -340,9 +386,17 @@ class MobileImageFullViewHelper {
             let currentDistance = this.getDistance(e.touches[0], e.touches[1]);
             let scaleChange = currentDistance / this.initialDistance;
             this.currentScale = Math.min(Math.max(this.lastScale * scaleChange, 1), 4); // Limit scale between 1 and 4
-            this.updateImageTransform();
+
+            // Use requestAnimationFrame for smoother updates
+            if (!this.rafId) {
+                this.rafId = requestAnimationFrame(() => {
+                    this.updateImageTransform();
+                    this.rafId = null;
+                });
+            }
         }
     }
+
 
     /** Handle pinch-to-zoom touch end */
     onPinchEnd(e) {
@@ -386,7 +440,13 @@ class MobileImageFullViewHelper {
 
             this.imagePosition.x = newX;
             this.imagePosition.y = newY;
-            this.updateImageTransform();
+            // this.updateImageTransform();
+            if (!this.rafId) {
+                this.rafId = requestAnimationFrame(() => {
+                    this.updateImageTransform();
+                    this.rafId = null;
+                });
+            }
         }
     }
 

@@ -444,49 +444,7 @@ function setupMobileCurrentImageExtras () {
         extrasWrapper.classList.toggle("closed");
     });
     current_image.appendChild(controls);
-
-    // Toggle image info
-    // controls.querySelector('.image-info-toggle').addEventListener('click', () => {
-    //     if (extrasWrapper) {
-    //         extrasWrapper.classList.toggle("open");
-    //         extrasWrapper.classList.toggle("closed");
-    //         // extrasWrapper.classList.toggle('show');
-    //         if (extrasWrapper.classList.contains('open')) {
-    //             extrasWrapper.style.display = 'block';
-    //         } else {
-    //             extrasWrapper.style.display = 'none';
-    //         }
-    //     }
-    // });
-
-
-    // if (!current_image.querySelector("#mobile_expand_indicator")) {
-    //     let newExpandIndicator = document.createElement("div");
-    //     newExpandIndicator.id = "mobile_expand_indicator";
-    //     newExpandIndicator.className = "mobile-expand-indicator";
-    //     newExpandIndicator.textContent = "▲ More Info";
-    //     handleAction(newExpandIndicator, function () {
-    //         extrasWrapper.classList.toggle("open");
-    //         extrasWrapper.classList.toggle("closed");
-    //         newExpandIndicator.classList.toggle("expanded");
-    //         newExpandIndicator.textContent = extrasWrapper.classList.contains(
-    //             "open"
-    //         )
-    //             ? "▼ Less Info"
-    //             : "▲ More Info";
-    //     });
-    //     current_image.appendChild(newExpandIndicator);
-    // }
-
     current_image.appendChild(extrasWrapper);
-    // Set up the toggle action
-    handleAction(expandIndicator, function () {
-        extrasWrapper.classList.toggle("closed");
-        expandIndicator.classList.toggle("expanded");
-        expandIndicator.textContent = extrasWrapper.classList.contains("closed")
-            ? "▼ Less Info"
-            : "▲ More Info";
-    });
 
     isUpdatingExtras = false;
 };
@@ -748,173 +706,212 @@ function setupFab() {
 document.addEventListener('click', (event) => {
     const isFlyoutButton = event.target.closest('.nav-button');
     const isFab = event.target.closest('#genButtonMobile');
-    const isFlyout = event.target.closest('.mobile-flyout');
 
-    if (!isFlyoutButton && !isFab && !isFlyout) {
+    // Check if the click is inside any open flyout
+    // const isInsideFlyout = event.target.closest('.mobile-flyout:not(.closed)');
+    const isInsideFlyout = event.target.closest('.mobile-flyout:not(.closed)') ||
+                            event.target.closest('.pagination-controls') ||
+                            event.target.closest('.page-button') ||
+                            event.target.closest('.pagination-ellipsis');
+
+    console.log('Clicked Element:', event.target);
+    console.log('isFlyoutButton:', !!isFlyoutButton);
+    console.log('isFab:', !!isFab);
+    console.log('isInsideFlyout:', !!isInsideFlyout);
+
+
+    // If the click is not on a flyout button, the FAB, or inside any open flyout, close all flyouts
+    if (!isFlyoutButton && !isFab && !isInsideFlyout) {
+        console.log('Closing all flyouts...');
         closeAllFlyouts();
     }
 });
 
 
-// document.addEventListener('DOMContentLoaded', () => {
-//     const currentImageContainer = document.querySelector('#current_image');
+/**
+ * Creates and appends or updates action buttons for a given image.
+ *
+ * @param {string} src - The source URL of the image.
+ * @param {HTMLImageElement} img - The image element associated with the buttons.
+ * @param {string | object} metadata - Metadata related to the image.
+ * @param {HTMLElement} extrasWrapper - The container to append the buttons to.
+ * @param {boolean} [prepend=false] - Whether to prepend the buttons instead of appending.
+ */
+function createImageActionButtons(src, img, metadata, extrasWrapper, prepend = false) {
+    // Check if 'current-image-buttons' already exists within extrasWrapper
+    let buttons = extrasWrapper.querySelector('.current-image-buttons');
 
-//     if (!currentImageContainer) return;
+    if (buttons) {
+        buttons.style.marginTop = "25px";
+        // Update existing buttons by clearing their content
+        buttons.innerHTML = '';
+    } else {
+        // Create the buttons container
+        buttons = createDiv(null, 'current-image-buttons');
+        buttons.style.marginTop = "25px";
+        // Append or prepend the container based on the 'prepend' flag
+        if (prepend) {
+            extrasWrapper.prepend(buttons);
+        } else {
+            extrasWrapper.appendChild(buttons);
+        }
+    }
 
-//     /**
-//      * Applies necessary styles to center the image and layout controls.
-//      */
-//     const applyStyles = () => {
-//         Object.assign(currentImageContainer.style, {
-//             position: 'relative',
-//             display: 'flex',
-//             flexDirection: 'column',
-//             alignItems: 'center',
-//             justifyContent: 'center',
-//             width: '100%',
-//             height: '100%',
-//             overflow: 'hidden',
-//         });
+    // Clean the image path
+    let imagePathClean = src;
+    if (imagePathClean.startsWith("http://") || imagePathClean.startsWith("https://")) {
+        imagePathClean = imagePathClean.substring(imagePathClean.indexOf('/', imagePathClean.indexOf('/') + 2));
+    }
+    if (imagePathClean.startsWith('/')) {
+        imagePathClean = imagePathClean.substring(1);
+    }
+    if (imagePathClean.startsWith('Output/')) {
+        imagePathClean = imagePathClean.substring('Output/'.length);
+    }
+    if (imagePathClean.startsWith('View/')) {
+        imagePathClean = imagePathClean.substring('View/'.length);
+        let firstSlash = imagePathClean.indexOf('/');
+        if (firstSlash !== -1) {
+            imagePathClean = imagePathClean.substring(firstSlash + 1);
+        }
+    }
 
-//         currentImageContainer.querySelectorAll('img').forEach(img => {
-//             Object.assign(img.style, {
-//                 maxWidth: '100%',
-//                 maxHeight: '80%', // Adjust as needed to reserve space for controls
-//                 display: 'block',
-//                 margin: '0 auto',
-//                 transition: 'transform 0.3s ease',
-//             });
-//         });
+    // Retrieve user settings or set default buttons
+    let buttonsChoice = getUserSetting('ButtonsUnderMainImages', '');
+    if (buttonsChoice === '') {
+        buttonsChoice = 'Use As Init,Edit Image,Star,Reuse Parameters';
+    }
+    buttonsChoice = buttonsChoice.toLowerCase().replaceAll(' ', '').split(',');
 
-//         const extrasWrapper = document.querySelector('.current-image-extras-wrapper');
-//         if (extrasWrapper) {
-//             Object.assign(extrasWrapper.style, {
-//                 width: '100%',
-//                 height: 'auto',
-//                 maxHeight: '20%', // Adjust to fill remaining space
-//                 overflow: 'auto',
-//                 transition: 'height 0.3s ease',
-//             });
-//         }
-//     };
+    let subButtons = [];
 
-//     /**
-//      * Function to add image controls if img is available.
-//      */
-//     const addImageControls = () => {
-//         const img = currentImageContainer.querySelector('img');
-//         const extrasWrapper = document.querySelector('.current-image-extras-wrapper');
+    /**
+     * Includes a button based on user settings.
+     *
+     * @param {string} name - The display name of the button.
+     * @param {Function} action - The callback function to execute on click.
+     * @param {string} [extraClass=''] - Additional CSS classes for the button.
+     * @param {string} [title=''] - Tooltip text for the button.
+     */
+    function includeButton(name, action, extraClass = '', title = '') {
+        let checkName = name.toLowerCase().replaceAll(' ', '');
+        if (checkName === 'starred') {
+            checkName = 'star';
+        }
+        if (buttonsChoice.includes(checkName)) {
+            quickAppendButton(buttons, name, (e, button) => action(button), extraClass, title);
+        } else {
+            subButtons.push({ key: name, action: action });
+        }
+    }
 
-//         // Check if img exists and controls are not already added
-//         if (img && !currentImageContainer.querySelector('.image-controls')) {
-//             console.log('Image found:', img);
+    // Define and include various buttons
 
-//             // Create and append image controls
-//             const controls = document.createElement('div');
-//             controls.className = 'image-controls';
-//             Object.assign(controls.style, {
-//                 position: 'absolute',
-//                 bottom: '10px',
-//                 display: 'flex',
-//                 gap: '10px',
-//                 padding: '5px 10px',
-//                 borderRadius: '5px',
-//             });
-//             controls.innerHTML = `
-//                 <button class="image-info-toggle">Image Info</button>
-//             `;
-//             currentImageContainer.appendChild(controls);
+    // "Use As Init" Button
+    includeButton('Use As Init', () => {
+        let initImageParam = document.getElementById('input_initimage');
+        if (initImageParam) {
+            let tmpImg = new Image();
+            tmpImg.crossOrigin = 'Anonymous';
+            tmpImg.onload = () => {
+                let canvas = document.createElement('canvas');
+                canvas.width = tmpImg.naturalWidth;
+                canvas.height = tmpImg.naturalHeight;
+                let ctx = canvas.getContext('2d');
+                ctx.drawImage(tmpImg, 0, 0);
+                canvas.toBlob(blob => {
+                    let type = img.src.substring(img.src.lastIndexOf('.') + 1);
+                    let file = new File([blob], imagePathClean, { type: `image/${type.length > 0 && type.length < 20 ? type : 'png'}` });
+                    let container = new DataTransfer();
+                    container.items.add(file);
+                    initImageParam.files = container.files;
+                    triggerChangeFor(initImageParam);
+                    toggleGroupOpen(initImageParam, true);
+                    let toggler = getRequiredElementById('input_group_content_initimage_toggle');
+                    toggler.checked = true;
+                    triggerChangeFor(toggler);
+                });
+            };
+            tmpImg.src = img.src;
+        }
+    }, '', 'Sets this image as the Init Image parameter input');
 
-//             // Toggle image info
-//             controls.querySelector('.image-info-toggle').addEventListener('click', () => {
-//                 if (extrasWrapper) {
-//                     extrasWrapper.classList.toggle("open");
-//                     extrasWrapper.classList.toggle("closed");
-//                     // extrasWrapper.classList.toggle('show');
-//                     if (extrasWrapper.classList.contains('open')) {
-//                         extrasWrapper.style.display = 'block';
-//                     } else {
-//                         extrasWrapper.style.display = 'none';
-//                     }
-//                 }
-//             });
+    // "Edit Image" Button
+    includeButton('Edit Image', () => {
+        let initImageGroupToggle = document.getElementById('input_group_content_initimage_toggle');
+        if (initImageGroupToggle) {
+            initImageGroupToggle.checked = true;
+            triggerChangeFor(initImageGroupToggle);
+        }
+        let initImageParam = document.getElementById('input_initimage');
+        if (!initImageParam) {
+            showError('Cannot use "Edit Image": Init Image parameter not found\nIf you have a custom workflow, deactivate it, or add an Init Image parameter.');
+            return;
+        }
+        imageEditor.setBaseImage(img);
+        imageEditor.activate();
+    }, '', 'Opens an Image Editor for this image');
 
-//             // Apply centering styles
-//             applyStyles();
-//         }
-//     };
+    // "Upscale 2x" Button
+    includeButton('Upscale 2x', () => {
+        toDataURL(img.src, (url => {
+            let [width, height] = naturalDim();
+            let input_overrides = {
+                'initimage': url,
+                'images': 1,
+                'aspectratio': 'Custom',
+                'width': width * 2,
+                'height': height * 2
+            };
+            mainGenHandler.doGenerate(input_overrides, { 'initimagecreativity': 0.4 });
+        }));
+    }, '', 'Runs an instant generation with this image as the input and scale doubled');
 
-//     /**
-//      * Function to remove image controls.
-//      */
-//     const removeImageControls = () => {
-//         const controls = currentImageContainer.querySelector('.image-controls');
-//         if (controls) {
-//             controls.remove();
-//         }
+    // Parse metadata for the 'Star' button
+    let metaParsed = { is_starred: false };
+    if (metadata) {
+        try {
+            metaParsed = JSON.parse(metadata) || metaParsed;
+        } catch (e) {
+            console.log(`Error parsing metadata for image: ${e}, metadata was ${metadata}`);
+        }
+    }
 
-//         const img = currentImageContainer.querySelector('img');
-//         if (img) {
-//             img.style.transform = `scale(1)`; // Reset zoom
-//         }
-//     };
+    // "Star" or "Starred" Button
+    includeButton(metaParsed.is_starred ? 'Starred' : 'Star', (e, button) => {
+        toggleStar(imagePathClean, src);
+    }, (metaParsed.is_starred ? ' star-button button-starred-image' : ' star-button'), 'Toggles this image as starred - starred images get moved to a separate folder and highlighted');
 
-//     /**
-//      * Initialize MutationObserver to watch for changes in #current_image.
-//      */
-//     const observer = new MutationObserver((mutations) => {
-//         mutations.forEach((mutation) => {
-//             if (mutation.type === 'childList') {
-//                 const img = currentImageContainer.querySelector('img');
-//                 if (img) {
-//                     addImageControls();
-//                 } else {
-//                     removeImageControls();
-//                 }
-//             } else if (mutation.type === 'attributes' && mutation.attributeName === 'src') {
-//                 const img = currentImageContainer.querySelector('img');
-//                 if (img) {
-//                     addImageControls();
-//                 } else {
-//                     removeImageControls();
-//                 }
-//             }
-//         });
-//     });
+    // "Reuse Parameters" Button
+    includeButton('Reuse Parameters', copy_current_image_params, '', 'Copies the parameters used to generate this image to the current generation settings');
 
-//     // Configuration of the observer:
-//     const config = {
-//         childList: true, // Listen for added or removed child elements
-//         attributes: true, // Listen for attribute changes
-//         subtree: true, // Observe all descendants
-//     };
+    // "View In History" Button
+    includeButton('View In History', () => {
+        let folder = imagePathClean;
+        let lastSlash = folder.lastIndexOf('/');
+        if (lastSlash !== -1) {
+            folder = folder.substring(0, lastSlash);
+        }
+        getRequiredElementById('imagehistorytabclickable').click();
+        imageHistoryBrowser.navigate(folder);
+    }, '', 'Jumps the Image History browser to where this image is at.');
 
-//     // Start observing the target node for configured mutations
-//     observer.observe(currentImageContainer, config);
+    // Include additional buttons based on image data
+    for (let added of buttonsForImage(imagePathClean, src)) {
+        if (added.label === 'Star') {
+            continue;
+        }
+        if (added.href) {
+            subButtons.push({ key: added.label, href: added.href, is_download: added.is_download });
+        } else {
+            includeButton(added.label, added.onclick, '', '');
+        }
+    }
 
-//     // Function to handle image load
-//     const handleImageLoad = () => {
-//         addImageControls();
-//     };
+    // Append the 'More' button with sub-buttons
+    quickAppendButton(buttons, 'More &#x2B9F;', (e, button) => {
+        let rect = button.getBoundingClientRect();
+        new AdvancedPopover('image_more_popover', subButtons, false, rect.x, rect.y + button.offsetHeight + 6, document.body, null);
+    });
 
-//     // Initial check in case #current_image already has an img element
-//     const initialImg = currentImageContainer.querySelector('img');
-//     if (initialImg) {
-//         if (initialImg.complete) {
-//             // If image is already loaded
-//             addImageControls();
-//         } else {
-//             // If image is not loaded yet, add an event listener
-//             initialImg.addEventListener('load', handleImageLoad);
-//         }
-//     }
-
-//     /**
-//      * Ensure extrasWrapper is properly sized when toggled.
-//      */
-//     const extrasWrapper = document.querySelector('.current-image-extras-wrapper');
-//     if (extrasWrapper) {
-//         extrasWrapper.style.display = 'none'; // Initially hide
-//         extrasWrapper.style.transition = 'height 0.3s ease';
-//     }
-// });
+}

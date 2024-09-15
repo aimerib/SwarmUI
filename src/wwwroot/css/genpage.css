@@ -2629,6 +2629,9 @@ background-color: var(--background);
 
 /* Image Element */
 #mobile_image_fullview_img {
+    will-change: transform;
+    backface-visibility: hidden;
+    perspective: 1000;
     max-width: 100%;
     max-height: 100%;
     transform: translate(0px, 0px) scale(1);

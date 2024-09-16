@@ -248,6 +248,7 @@ function formatMetadata(metadata) {
     }
     return result;
 }
+
 /** Mobile-specific helper class for handling image full view modal */
 class MobileImageFullViewHelper {
     constructor() {
@@ -260,18 +261,15 @@ class MobileImageFullViewHelper {
         // Initialize transformation states
         this.currentScale = 1;
         this.initialDistance = 0;
-        // this.lastScale = 1;
         this.translateX = 0;
         this.translateY = 0;
         this.startX = 0;
         this.startY = 0;
         this.isDragging = false;
         this.isPinching = false;
-        // this.dragStart = { x: 0, y: 0 };
-        // this.imagePosition = { x: 0, y: 0 };
-        // this.swipeStartY = 0;
-        // this.swipeEndY = 0;
-        // this.rafId = null;
+        this.lastTouchX = 0;
+        this.lastTouchY = 0;
+
 
         // Initialize variables for double-tap detection
         this.lastTap = 0;
@@ -279,7 +277,6 @@ class MobileImageFullViewHelper {
         this.tapDistance = 50; // Maximum distance (in pixels) between taps for double-tap
 
         // Bind the double-tap event
-        // this.bindDoubleTap();
         this.pixelRatio = window.devicePixelRatio || 1;
     }
 
@@ -308,35 +305,8 @@ class MobileImageFullViewHelper {
         this.lastTap = currentTime;
         this.lastTapX = tapX;
         this.lastTapY = tapY;
-        // const currentTime = new Date().getTime();
-        // const tapLength = currentTime - this.lastTap;
-        // const touch = e.changedTouches[0];
-        // const tapX = touch.clientX;
-        // const tapY = touch.clientY;
-
-        // if (tapLength < this.tapTimeout && tapLength > 0) {
-        //     // Check distance between taps
-        //     const deltaX = tapX - this.lastTapX;
-        //     const deltaY = tapY - this.lastTapY;
-        //     const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-
-        //     if (distance < this.tapDistance) {
-        //         // Double-tap detected
-        //         this.resetImage();
-        //     }
-        // }
-
-        // this.lastTap = currentTime;
-        // this.lastTapX = tapX;
-        // this.lastTapY = tapY;
     }
 
-    // /** Resets the image scale to 1 and re-centers it */
-    // resetImage() {
-    //     this.currentScale = 1;
-    //     this.imagePosition = { x: 0, y: 0 };
-    //     this.updateImageTransform();
-    // }
     resetTransform() {
         this.currentScale = 1;
         this.translateX = 0;
@@ -380,24 +350,12 @@ class MobileImageFullViewHelper {
         this.canvas.height = window.innerHeight;
         this.canvas.style.maxWidth = '100%';
         this.canvas.style.maxHeight = '100%';
+        this.canvas.style.borderRadius = '8px';
         this.canvas.style.backgroundColor = 'transparent';
         this.ctx = this.canvas.getContext('2d');
 
         // Scale the context to account for device pixel ratio
         this.ctx.scale(this.pixelRatio, this.pixelRatio);
-
-
-        // // Create image container
-        // this.imageContainer = document.createElement('div');
-        // this.imageContainer.id = 'mobile_image_fullview_container';
-
-        // // Create image element
-        // this.img = document.createElement('img');
-        // this.img.id = 'mobile_image_fullview_img';
-        // this.img.style.maxWidth = '100%';
-        // this.img.style.maxHeight = '100%';
-        // this.img.style.transform = 'translate3d(0px, 0px, 0) scale(1)';
-        // this.img.style.transition = 'transform 0.1s ease-out'; // Reduced transition duration for responsiveness
 
         // Create metadata container
         this.metadataContainer = document.createElement('div');
@@ -408,8 +366,6 @@ class MobileImageFullViewHelper {
         this.canvasContainer.appendChild(this.metadataContainer);
         this.modal.appendChild(this.canvasContainer);
 
-        // this.imageContainer.appendChild(this.img);
-        // this.modal.appendChild(this.imageContainer);
         this.modal.appendChild(this.metadataContainer);
         document.body.appendChild(this.modal);
     }
@@ -427,31 +383,6 @@ class MobileImageFullViewHelper {
                 this.close();
             }
         });
-        // // Handle pinch-to-zoom
-        // this.modal.addEventListener('touchstart', this.onPinchStart.bind(this), { passive: false });
-        // this.modal.addEventListener('touchmove', this.onPinchMove.bind(this), { passive: false });
-        // this.modal.addEventListener('touchend', this.onPinchEnd.bind(this), { passive: false });
-
-        // // Handle drag for panning
-        // this.modal.addEventListener('touchstart', this.onDragStart.bind(this), { passive: false });
-        // this.modal.addEventListener('touchmove', this.onDragMove.bind(this), { passive: false });
-        // this.modal.addEventListener('touchend', this.onDragEnd.bind(this), { passive: false });
-
-        // // Close modal when clicking outside the image
-        // this.modal.addEventListener('touchstart', (e) => {
-        //     let actionButtons = this.modal.querySelector('.current-image-buttons');
-        //     if (actionButtons && actionButtons.contains(e.target)) {
-        //         return;
-        //     }
-        //     if (e.target === this.metadataContainer || this.metadataContainer.contains(e.target)) {
-        //         return
-        //     }
-        //     if (e.target !== this.img && e.touches.length < 2) {
-        //         this.close();
-        //         e.preventDefault();
-        //         e.stopPropagation();
-        //     }
-        // });
     }
 
     /** Display the image in full-screen mode with metadata */
@@ -478,7 +409,6 @@ class MobileImageFullViewHelper {
         };
         this.image.onerror = (e) => {
             console.error( `Failed to load image: ${src}`, e);
-            // Optionally, display an error message or a placeholder
             const canvasWidth = this.canvas.width / this.pixelRatio;
             const canvasHeight = this.canvas.height / this.pixelRatio;
             this.ctx.clearRect(0, 0, canvasWidth, canvasHeight);
@@ -488,15 +418,6 @@ class MobileImageFullViewHelper {
             this.ctx.fillText('Failed to load image', this.canvas.width / 2, this.canvas.height / 2);
         };
         this.image.src = `${window.location.origin}/${src}`;
-        // createImageActionButtons(src, this.img, metadata, this.modal, true);
-        // this.img.src = `${window.location.origin}/${src}`;
-        // this.metadataContainer.innerHTML = formatMetadata(metadata);
-        // this.modal.style.display = 'flex';
-
-        // // Reset transformations
-        // this.currentScale = 1;
-        // this.imagePosition = { x: 0, y: 0 };
-        // this.updateImageTransform();
     }
 
     /** Calculate the initial scale to ensure the image touches at least two connected edges */
@@ -530,149 +451,29 @@ class MobileImageFullViewHelper {
     drawImage() {
         if (!this.image) return;
 
+        const ctx = this.canvas.getContext('2d');
         const canvasWidth = this.canvas.width / this.pixelRatio;
         const canvasHeight = this.canvas.height / this.pixelRatio;
-        const imageWidth = this.image.naturalWidth;
-        const imageHeight = this.image.naturalHeight;
 
-        // Calculate scaled dimensions
-        const scaledWidth = imageWidth * this.currentScale;
-        const scaledHeight = imageHeight * this.currentScale;
+        ctx.clearRect(0, 0, canvasWidth, canvasHeight);
 
-        // Clear the canvas
-        this.ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+        ctx.save();
+        ctx.translate(this.translateX, this.translateY);
+        ctx.scale(this.currentScale, this.currentScale);
+        ctx.drawImage(this.image, 0, 0);
+        ctx.restore();
 
-        // Draw the image with transformations
-        this.ctx.save();
-        this.ctx.translate(this.translateX, this.translateY);
-        this.ctx.scale(this.currentScale, this.currentScale);
-        this.ctx.drawImage(this.image, 0, 0, imageWidth, imageHeight);
-        this.ctx.restore();
+        console.log('Draw: scale:', this.currentScale, 'translateX:', this.translateX, 'translateY:', this.translateY);
     }
-
-    // /** Update the image's CSS transform based on current scale and position */
-    // updateImageTransform() {
-    //     this.img.style.transform = `translate3d(${this.imagePosition.x}px, ${this.imagePosition.y}px, 0) scale(${this.currentScale})`;
-    // }
-
-    // /** Handle pinch-to-zoom touch start */
-    // onPinchStart(e) {
-    //     if (e.touches.length === 2) {
-    //         e.preventDefault();
-    //         this.initialDistance = this.getDistance(e.touches[0], e.touches[1]);
-    //         this.lastScale = this.currentScale;
-    //     }
-    // }
-
-    // /** Handle pinch-to-zoom touch move */
-    // onPinchMove(e) {
-    //     if (e.touches.length === 2) {
-    //         e.preventDefault();
-    //         let currentDistance = this.getDistance(e.touches[0], e.touches[1]);
-    //         let scaleChange = currentDistance / this.initialDistance;
-    //         this.currentScale = Math.min(Math.max(this.lastScale * scaleChange, 1), 4); // Limit scale between 1 and 4
-
-    //         // Use requestAnimationFrame for smoother updates
-    //         if (!this.rafId) {
-    //             this.rafId = requestAnimationFrame(() => {
-    //                 this.updateImageTransform();
-    //                 this.rafId = null;
-    //             });
-    //         }
-    //     }
-    // }
-
-
-    // /** Handle pinch-to-zoom touch end */
-    // onPinchEnd(e) {
-    //     if (e.touches.length < 2) {
-    //         this.lastScale = this.currentScale;
-    //     }
-    // }
-
-    // /** Handle drag start for panning */
-    // onDragStart(e) {
-    //     if (e.touches.length === 1 && this.currentScale > 1) { // Only allow drag if scaled up
-    //         e.preventDefault();
-    //         this.isDragging = true;
-    //         this.dragStart.x = e.touches[0].clientX - this.imagePosition.x;
-    //         this.dragStart.y = e.touches[0].clientY - this.imagePosition.y;
-    //     }
-    // }
-
-    // /** Handle drag move for panning */
-    // onDragMove(e) {
-    //     if (this.isDragging && e.touches.length === 1 && this.currentScale > 1) {
-    //         e.preventDefault();
-    //         let newX = e.touches[0].clientX - this.dragStart.x;
-    //         let newY = e.touches[0].clientY - this.dragStart.y;
-
-    //         // Calculate boundaries
-    //         const containerRect = this.imageContainer.getBoundingClientRect();
-    //         const imgRect = this.img.getBoundingClientRect();
-    //         const scaledWidth = imgRect.width;
-    //         const scaledHeight = imgRect.height;
-    //         const containerWidth = containerRect.width;
-    //         const containerHeight = containerRect.height;
-
-    //         // Calculate max allowed translation
-    //         const maxTranslateX = (scaledWidth - containerWidth) / 2;
-    //         const maxTranslateY = (scaledHeight - containerHeight) / 2;
-
-    //         // Clamp the new positions
-    //         newX = Math.min(maxTranslateX, Math.max(newX, -maxTranslateX));
-    //         newY = Math.min(maxTranslateY, Math.max(newY, -maxTranslateY));
-
-    //         this.imagePosition.x = newX;
-    //         this.imagePosition.y = newY;
-    //         // this.updateImageTransform();
-    //         if (!this.rafId) {
-    //             this.rafId = requestAnimationFrame(() => {
-    //                 this.updateImageTransform();
-    //                 this.rafId = null;
-    //             });
-    //         }
-    //     }
-    // }
-
-    // /** Handle drag end for panning */
-    // onDragEnd(e) {
-    //     if (this.isDragging) {
-    //         this.isDragging = false;
-    //     }
-    // }
-
-    // /** Handle swipe start */
-    // onSwipeStart(e) {
-    //     if (e.touches.length === 1) {
-    //         this.swipeStartY = e.touches[0].clientY;
-    //     }
-    // }
-
-    // /** Handle swipe move */
-    // onSwipeMove(e) {
-    //     if (e.touches.length === 1) {
-    //         this.swipeEndY = e.touches[0].clientY;
-    //         let deltaY = this.swipeEndY - this.swipeStartY;
-    //         if (deltaY > 100) { // Threshold for swipe down
-    //             this.close();
-    //         }
-    //     }
-    // }
-
-    // /** Handle swipe end */
-    // onSwipeEnd(e) {
-    //     // Reset swipe positions
-    //     this.swipeStartY = 0;
-    //     this.swipeEndY = 0;
-    // }
 
     onTouchStart(e) {
         if (e.touches.length === 1) {
         // Single touch start - panning
             this.isDragging = true;
-            this.startX = e.touches[0].clientX - this.translateX;
-            this.startY = e.touches[0].clientY - this.translateY;
+            // this.startX = e.touches[0].clientX - this.translateX;
+            // this.startY = e.touches[0].clientY - this.translateY;
+            this.lastTouchX = e.touches[0].clientX;
+            this.lastTouchY = e.touches[0].clientY;
         } else if (e.touches.length === 2) {
         // Two fingers - pinch to zoom
             this.isPinching = true;
@@ -682,28 +483,47 @@ class MobileImageFullViewHelper {
     }
 
     onTouchMove(e) {
-        e.preventDefault(); // Prevent default touch behaviors like scrolling
+        e.preventDefault();
+        const canvasWidth = this.canvas.width;
+        const canvasHeight = this.canvas.height;
+        const imageWidth = this.image.naturalWidth * this.currentScale;
+        const imageHeight = this.image.naturalHeight * this.currentScale;
+
 
         if (this.isDragging && e.touches.length === 1) {
-            // Panning
-            this.translateX = e.touches[0].clientX - this.startX;
-            this.translateY = e.touches[0].clientY - this.startY;
+            const touch = e.touches[0];
+            const deltaX = touch.clientX - this.lastTouchX;
+            const deltaY = touch.clientY - this.lastTouchY;
 
-            // Ensure the image touches at least two connected edges
-            this.constrainTranslation();
+            // Update translation
+            this.translateX += deltaX * this.pixelRatio;
+            this.translateY += deltaY * this.pixelRatio;
 
-            this.drawImage();
+            // Constrain translation
+            this.translateX = Math.min(0, Math.max(canvasWidth - imageWidth, this.translateX));
+            this.translateY = Math.min(0, Math.max(canvasHeight - imageHeight, this.translateY));
+
+            this.lastTouchX = touch.clientX;
+            this.lastTouchY = touch.clientY;
+
         } else if (this.isPinching && e.touches.length === 2) {
-            // Pinch to zoom
             const currentDistance = this.getDistance(e.touches[0], e.touches[1]);
-            const scaleChange = currentDistance / this.initialDistance;
-            this.currentScale = Math.min(Math.max(this.initialScale * scaleChange, 1), 4); // Limit scale between 1x and 4x
+            const scaleFactor = currentDistance / this.initialDistance;
 
-            // After scaling, ensure the image still touches at least two connected edges
-            this.constrainTranslation();
+            const prevScale = this.currentScale;
+            this.currentScale = Math.min(Math.max(this.initialScale * scaleFactor, 1), 4);
 
-            this.drawImage();
+            const zoomCenterX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+            const zoomCenterY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+
+            // Adjust translation to zoom towards the center of the pinch
+            this.translateX += (zoomCenterX - this.translateX) * (1 - this.currentScale / prevScale);
+            this.translateY += (zoomCenterY - this.translateY) * (1 - this.currentScale / prevScale);
+
         }
+
+        this.constrainTranslation();
+        this.drawImage();
     }
 
     onTouchEnd(e) {
@@ -776,36 +596,24 @@ class MobileImageFullViewHelper {
 
     /** Constrains the translation to ensure at least two connected edges are touched */
     constrainTranslation() {
-        const canvasWidth = this.canvas.width / this.pixelRatio;
-        const canvasHeight = this.canvas.height / this.pixelRatio;
-        const imageWidth = this.image.naturalWidth;
-        const imageHeight = this.image.naturalHeight;
+        const canvasWidth = this.canvas.width;
+        const canvasHeight = this.canvas.height;
+        const imageWidth = this.image.naturalWidth * this.currentScale;
+        const imageHeight = this.image.naturalHeight * this.currentScale;
 
-        const scaledWidth = imageWidth * this.currentScale;
-        const scaledHeight = imageHeight * this.currentScale;
-
-        // Define initial constraints based on image and canvas sizes
-        if (scaledWidth <= canvasWidth && scaledHeight <= canvasHeight) {
-            // Image fits within both dimensions - align to top-left
-            this.translateX = 0;
-            this.translateY = 0;
-        } else if (scaledWidth <= canvasWidth) {
-            // Image fits horizontally but not vertically - align to left and constrain vertically
-            this.translateX = 0;
-            const minTranslateY = canvasHeight - scaledHeight;
-            this.translateY = Math.min(Math.max(this.translateY, minTranslateY), 0);
-        } else if (scaledHeight <= canvasHeight) {
-            // Image fits vertically but not horizontally - align to top and constrain horizontally
-            this.translateY = 0;
-            const minTranslateX = canvasWidth - scaledWidth;
-            this.translateX = Math.min(Math.max(this.translateX, minTranslateX), 0);
+        if (imageWidth <= canvasWidth) {
+            this.translateX = (canvasWidth - imageWidth) / 2;
         } else {
-            // Image exceeds both dimensions - constrain both horizontally and vertically
-            const minTranslateX = canvasWidth - scaledWidth;
-            const minTranslateY = canvasHeight - scaledHeight;
-            this.translateX = Math.min(Math.max(this.translateX, minTranslateX), 0);
-            this.translateY = Math.min(Math.max(this.translateY, minTranslateY), 0);
+            this.translateX = Math.min(0, Math.max(canvasWidth - imageWidth, this.translateX));
         }
+
+        if (imageHeight <= canvasHeight) {
+            this.translateY = (canvasHeight - imageHeight) / 2;
+        } else {
+            this.translateY = Math.min(0, Math.max(canvasHeight - imageHeight, this.translateY));
+        }
+
+        console.log('Constrained: translateX:', this.translateX, 'translateY:', this.translateY);
     }
 }
 
@@ -878,7 +686,6 @@ class ImageFullViewHelper {
     }
 
     onTouchStart(e) {
-        console.log('onTouchStart', e.target);
         let img = this.getCurrentImage();
         if (this.modal.style.display != 'block') {
             return;
@@ -1102,7 +909,6 @@ class ImageFullViewHelper {
     }
 
     onTouchEnd(e) {
-        console.log('onTouchEnd', e.target);
         let img = this.getCurrentImage();
         if (e.touches.length === 0 && e.target === img) {
             this.onGlobalMouseUp(e);

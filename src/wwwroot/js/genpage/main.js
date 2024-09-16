@@ -403,6 +403,8 @@ class MobileImageFullViewHelper {
             this.drawImage();
             // Display metadata
             this.metadataContainer.innerHTML = formatMetadata(metadata);
+            // Remove ", " separators from the metadata container on mobile
+            this.removeCommasFromMetadata();
             // Show the modal
             this.modal.style.display = 'flex';
         };
@@ -417,6 +419,20 @@ class MobileImageFullViewHelper {
             this.ctx.fillText('Failed to load image', this.canvas.width / 2, this.canvas.height / 2);
         };
         this.image.src = `${window.location.origin}/${src}`;
+    }
+
+
+    /** Helper method to remove ", " separators from the metadata container */
+    removeCommasFromMetadata() {
+        // Get all child nodes of the metadata container
+        const childNodes = Array.from(this.metadataContainer.childNodes);
+
+        childNodes.forEach((node, index) => {
+            // If the node is a text node and contains ", ", remove it
+            if (node.nodeType === Node.TEXT_NODE && node.textContent.trim() === ',') {
+                this.metadataContainer.removeChild(node);
+            }
+        });
     }
 
     /** Calculate the initial scale to ensure the image touches at least two connected edges */
@@ -461,8 +477,6 @@ class MobileImageFullViewHelper {
         ctx.scale(this.currentScale, this.currentScale);
         ctx.drawImage(this.image, 0, 0);
         ctx.restore();
-
-        console.log('Draw: scale:', this.currentScale, 'translateX:', this.translateX, 'translateY:', this.translateY);
     }
 
     onTouchStart(e) {
@@ -3115,7 +3129,7 @@ function genpageLoad() {
 }
 
 window.addEventListener('resize', () => {
-    if (mobileImageFullView.modal.style.display === 'flex') {
+    if (mobileImageFullView?.modal?.style?.display === 'flex') {
         mobileImageFullView.resizeCanvas();
     }
 });

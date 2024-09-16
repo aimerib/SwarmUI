@@ -340,8 +340,7 @@ class MobileImageFullViewHelper {
         this.canvasContainer = document.createElement('div');
         this.canvasContainer.id = 'mobile_image_fullview_container';
         this.canvasContainer.style.position = 'relative';
-        this.canvasContainer.style.width = '100%';
-        this.canvasContainer.style.height = '100%';
+
         // Create canvas element
         this.canvas = document.createElement('canvas');
         this.canvas.id = 'mobile_image_fullview_canvas';
@@ -470,8 +469,7 @@ class MobileImageFullViewHelper {
         if (e.touches.length === 1) {
         // Single touch start - panning
             this.isDragging = true;
-            // this.startX = e.touches[0].clientX - this.translateX;
-            // this.startY = e.touches[0].clientY - this.translateY;
+
             this.lastTouchX = e.touches[0].clientX;
             this.lastTouchY = e.touches[0].clientY;
         } else if (e.touches.length === 2) {
@@ -566,34 +564,6 @@ class MobileImageFullViewHelper {
         }
     }
 
-    /** Ensures the image touches at least two connected edges of the canvas */
-    ensureMinEdges() {
-        const canvasWidth = this.canvas.width / this.pixelRatio;
-        const canvasHeight = this.canvas.height / this.pixelRatio;
-        const imageWidth = this.image.naturalWidth;
-        const imageHeight = this.image.naturalHeight;
-
-        const scaledWidth = imageWidth * this.currentScale;
-        const scaledHeight = imageHeight * this.currentScale;
-
-        // Calculate edges touch
-        const touchesLeft = this.translateX <= 0;
-        const touchesRight = (this.translateX + scaledWidth) >= canvasWidth;
-        const touchesTop = this.translateY <= 0;
-        const touchesBottom = (this.translateY + scaledHeight) >= canvasHeight;
-
-        // Ensure at least two connected edges are touched
-        if (!touchesLeft && !touchesRight) {
-            // Align to left edge
-            this.translateX = 0;
-        }
-
-        if (!touchesTop && !touchesBottom) {
-            // Align to top edge
-            this.translateY = 0;
-        }
-    }
-
     /** Constrains the translation to ensure at least two connected edges are touched */
     constrainTranslation() {
         const canvasWidth = this.canvas.width;
@@ -612,8 +582,6 @@ class MobileImageFullViewHelper {
         } else {
             this.translateY = Math.min(0, Math.max(canvasHeight - imageHeight, this.translateY));
         }
-
-        console.log('Constrained: translateX:', this.translateX, 'translateY:', this.translateY);
     }
 }
 

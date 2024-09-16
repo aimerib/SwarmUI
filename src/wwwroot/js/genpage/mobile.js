@@ -714,15 +714,8 @@ document.addEventListener('click', (event) => {
                             event.target.closest('.page-button') ||
                             event.target.closest('.pagination-ellipsis');
 
-    console.log('Clicked Element:', event.target);
-    console.log('isFlyoutButton:', !!isFlyoutButton);
-    console.log('isFab:', !!isFab);
-    console.log('isInsideFlyout:', !!isInsideFlyout);
-
-
     // If the click is not on a flyout button, the FAB, or inside any open flyout, close all flyouts
     if (!isFlyoutButton && !isFab && !isInsideFlyout) {
-        console.log('Closing all flyouts...');
         closeAllFlyouts();
     }
 });

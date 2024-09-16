@@ -239,7 +239,7 @@ function initializeMobileUI () {
     console.log("Initializing mobile UI...");
     if (isLikelyMobile()) {
         safeExecute(setupTabSelector);
-        safeExecute(watchForClassAndHideModalTags);
+        // safeExecute(watchForClassAndHideModalTags);
         safeExecute(setupMobileUI);
     }
 };
@@ -413,7 +413,7 @@ function setupMobileCurrentImageExtras () {
         extrasWrapper.classList.add("closed");
     }
     let controls = current_image.querySelector('.image-controls');
-    if (!controls) {
+    if (!controls && isLikelyMobile()) {
         const controls = document.createElement('div');
         controls.className = 'image-controls';
         Object.assign(controls.style, {
@@ -433,8 +433,8 @@ function setupMobileCurrentImageExtras () {
         });
         current_image.appendChild(controls);
     } else {
-        const toggleButton = controls.querySelector('.image-info-toggle');
-        if (!toggleButton) {
+        const toggleButton = controls?.querySelector('.image-info-toggle');
+        if (!toggleButton && isLikelyMobile()) {
             const button = document.createElement('button');
             button.className = 'image-info-toggle';
             button.textContent = 'Image Info';
@@ -487,30 +487,30 @@ if (isIOS()) {
     disableIosTextFieldZoom();
 }
 
-function watchForClassAndHideModalTags() {
-    const observer = new MutationObserver((mutations) => {
-        mutations.forEach((mutation) => {
-            if (mutation.type === "childList") {
-                mutation.addedNodes.forEach((node) => {
-                    if (
-                        node.nodeType === Node.ELEMENT_NODE &&
-                        node.classList.contains("imageview_modal_inner_div")
-                    ) {
-                        const imageviewModalInnerDiv = document.querySelector(
-                            ".imageview_modal_inner_div"
-                        );
-                        if (imageviewModalInnerDiv) {
-                            imageviewModalInnerDiv.lastElementChild.style.display =
-                                "none";
-                        }
-                    }
-                });
-            }
-        });
-    });
+// function watchForClassAndHideModalTags() {
+//     const observer = new MutationObserver((mutations) => {
+//         mutations.forEach((mutation) => {
+//             if (mutation.type === "childList") {
+//                 mutation.addedNodes.forEach((node) => {
+//                     if (
+//                         node.nodeType === Node.ELEMENT_NODE &&
+//                         node.classList.contains("imageview_modal_inner_div")
+//                     ) {
+//                         const imageviewModalInnerDiv = document.querySelector(
+//                             ".imageview_modal_inner_div"
+//                         );
+//                         if (imageviewModalInnerDiv) {
+//                             imageviewModalInnerDiv.lastElementChild.style.display =
+//                                 "none";
+//                         }
+//                     }
+//                 });
+//             }
+//         });
+//     });
 
-    observer.observe(document.body, { childList: true, subtree: true });
-}
+//     observer.observe(document.body, { childList: true, subtree: true });
+// }
 
 function setupMobileViewHeight() {
     document.documentElement.style.setProperty("--vh", `${vh}px`);

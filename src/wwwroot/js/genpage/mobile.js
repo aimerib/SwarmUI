@@ -64,23 +64,6 @@ const addMultipleEventListeners = (element, events, handler) => {
     );
 };
 
-// /**
-//  * Toggles the visibility of an element
-//  * @param {HTMLElement} element - The element to toggle
-//  */
-// function toggleElement (element) {
-//     element.classList.toggle("closed");
-//     element.style.height = element.classList.contains("closed")
-//         ? "0px"
-//         : "100%";
-//     element.style.display = element.classList.contains("closed")
-//         ? "none !important"
-//         : "block !important";
-//     element.style.paddingBottom = element.classList.contains("closed")
-//         ? "0px"
-//         : "150px";
-// };
-
 /**
  * Opens a specific flyout.
  * @param {HTMLElement} flyout - The flyout element to open.
@@ -306,7 +289,7 @@ function setupMobileUI () {
         setupFlyout(bottomBar, toggleBottomBar);
         setupFlyout(inputSidebar, toggleInputSidebar);
         setupBackToTopButton();
-        setupGenButtonMobile();
+        // setupGenButtonMobile();
         setupMobileViewHeight();
         setupBottomNavigationBar();
         setupFab();
@@ -372,14 +355,14 @@ function setupBackToTopButton () {
         ?.addEventListener("click", backToTop, { passive: true });
 };
 
-/**
- * Sets up the mobile generate button
- */
-function setupGenButtonMobile () {
-    if (genButtonMobile) {
-        handleAction(genButtonMobile, handleGenerateClickMobile, true);
-    }
-};
+// /**
+//  * Sets up the mobile generate button
+//  */
+// function setupGenButtonMobile () {
+//     if (genButtonMobile) {
+//         handleAction(genButtonMobile, handleGenerateClickMobile, true);
+//     }
+// };
 
 /**
  * Handles the generate button click on mobile
@@ -400,7 +383,10 @@ function setupMobileCurrentImageExtras () {
     isUpdatingExtras = true;
 
     const current_image = document.getElementById("current_image");
-    if (!current_image) return;
+    if (!current_image) {
+        isUpdatingExtras = false;
+        return;
+    }
 
     // Add the extras wrapper
     const extrasWrapper = document.getElementById(
@@ -426,24 +412,39 @@ function setupMobileCurrentImageExtras () {
     if (!extrasWrapper.classList.contains("open")) {
         extrasWrapper.classList.add("closed");
     }
-    const controls = document.createElement('div');
-    controls.className = 'image-controls';
-    Object.assign(controls.style, {
-        position: 'absolute',
-        bottom: '10px',
-        display: 'flex',
-        gap: '10px',
-        padding: '5px 10px',
-        borderRadius: '5px',
-    });
-    controls.innerHTML = `
-        <button class="image-info-toggle">Image Info</button>
-    `;
-    handleAction(controls.querySelector('.image-info-toggle'), () => {
-        extrasWrapper.classList.toggle("open-image-info");
-        extrasWrapper.classList.toggle("closed");
-    });
-    current_image.appendChild(controls);
+    let controls = current_image.querySelector('.image-controls');
+    if (!controls) {
+        const controls = document.createElement('div');
+        controls.className = 'image-controls';
+        Object.assign(controls.style, {
+            position: 'absolute',
+            bottom: '10px',
+            display: 'flex',
+            gap: '10px',
+            padding: '5px 10px',
+            borderRadius: '5px',
+        });
+        controls.innerHTML = `
+            <button class="image-info-toggle">Image Info</button>
+        `;
+        handleAction(controls.querySelector('.image-info-toggle'), () => {
+            extrasWrapper.classList.toggle("open-image-info");
+            extrasWrapper.classList.toggle("closed");
+        });
+        current_image.appendChild(controls);
+    } else {
+        const toggleButton = controls.querySelector('.image-info-toggle');
+        if (!toggleButton) {
+            const button = document.createElement('button');
+            button.className = 'image-info-toggle';
+            button.textContent = 'Image Info';
+            controls.appendChild(button);
+            handleAction(button, () => {
+                extrasWrapper.classList.toggle("open-image-info");
+                extrasWrapper.classList.toggle("closed");
+            });
+        }
+    }
     current_image.appendChild(extrasWrapper);
 
     isUpdatingExtras = false;
@@ -774,6 +775,7 @@ function createImageActionButtons(src, img, metadata, extrasWrapper, prepend = f
     if (buttonsChoice === '') {
         buttonsChoice = 'Use As Init,Edit Image,Star,Reuse Parameters';
     }
+    buttonsChoice += ',Exit Full View';
     buttonsChoice = buttonsChoice.toLowerCase().replaceAll(' ', '').split(',');
 
     let subButtons = [];
@@ -888,6 +890,18 @@ function createImageActionButtons(src, img, metadata, extrasWrapper, prepend = f
         getRequiredElementById('imagehistorytabclickable').click();
         imageHistoryBrowser.navigate(folder);
     }, '', 'Jumps the Image History browser to where this image is at.');
+
+    includeButton('Exit Full View', () => {
+        closeFullView();
+    }, '', 'Closes the full view of this image');
+
+    closeFullView = () => {
+        let fullView = document.getElementById('mobile_image_fullview_modal');
+        if (fullView) {
+            fullView.style.display = 'none';
+            fullView.classList.remove('open');
+        }
+    }
 
     // Include additional buttons based on image data
     for (let added of buttonsForImage(imagePathClean, src)) {

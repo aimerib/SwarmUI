@@ -284,16 +284,21 @@ function setupMobileUI () {
         observer.observe(document.body, { childList: true, subtree: true });
 
         document.getElementById("popover_generate")?.style.setProperty("display", "none");
-        inputSidebar?.classList.add("mobile-flyout", "closed");
 
         setupFlyout(bottomBar, toggleBottomBar);
         setupFlyout(inputSidebar, toggleInputSidebar);
         setupBackToTopButton();
-        // setupGenButtonMobile();
+        setupToolsModal();
         setupMobileViewHeight();
         setupBottomNavigationBar();
         setupFab();
         setupCopyrightMessage();
+
+        const dialog = document.querySelector('[role="dialog"]');
+
+        dialog.addEventListener('touchmove', function(event) {
+            event.stopPropagation();
+        }, { passive: false });
     });
 };
 
@@ -306,6 +311,10 @@ function setupFlyout (element, toggleFunction) {
     if (element) {
         element.classList.add("mobile-flyout", "closed");
         styleElement(element);
+
+        element.querySelectorAll('*').forEach(child => {
+            child.classList.add('flyout-content');
+        });
     }
 };
 
@@ -644,6 +653,19 @@ function setupBottomNavigationBar() {
     }
 };
 
+function setupToolsModal() {
+    // const toolsModals = document.getElementsByClassName('modal-content');
+    // for (let toolsModal of toolsModals) {
+    //     if (toolsModal) {
+    //         toolsModal.addEventListener('touchmove', (e) => {
+    //             e.stopPropagation();
+    //             e.preventDefault();
+    //         });
+    //     }
+    // }
+    return;
+}
+
 /**
  * Handles actions triggered from the Bottom Navigation Bar
  * @param {string} action - The action identifier
@@ -710,13 +732,21 @@ document.addEventListener('click', (event) => {
 
     // Check if the click is inside any open flyout
     // const isInsideFlyout = event.target.closest('.mobile-flyout:not(.closed)');
+    // const isInsideFlyout = event.target.closest('.mobile-flyout:not(.closed)') ||
+    //                         event.target.closest('.pagination-controls') ||
+    //                         event.target.closest('.page-button') ||
+    //                         event.target.closest('.pagination-ellipsis');
+
     const isInsideFlyout = event.target.closest('.mobile-flyout:not(.closed)') ||
+                            event.target.closest('.flyout-content') ||
                             event.target.closest('.pagination-controls') ||
                             event.target.closest('.page-button') ||
                             event.target.closest('.pagination-ellipsis');
+    const isInsidePopover = event.target.closest('.sui-popover');
 
-    // If the click is not on a flyout button, the FAB, or inside any open flyout, close all flyouts
-    if (!isFlyoutButton && !isFab && !isInsideFlyout) {
+
+    // If the click is not on a flyout button, the FAB, a popover, or inside any open flyout, close all flyouts
+    if (!isFlyoutButton && !isFab && !isInsideFlyout && !isInsidePopover) {
         closeAllFlyouts();
     }
 });

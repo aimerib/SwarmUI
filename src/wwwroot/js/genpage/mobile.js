@@ -299,6 +299,13 @@ function setupMobileUI () {
         dialog.addEventListener('touchmove', function(event) {
             event.stopPropagation();
         }, { passive: false });
+
+        document.querySelectorAll('.nav-button').forEach(button => {
+            button.addEventListener('click', function() {
+                document.querySelectorAll('.nav-button').forEach(btn => btn.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
     });
 };
 

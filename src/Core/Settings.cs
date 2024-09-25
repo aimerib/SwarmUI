@@ -210,6 +210,9 @@ public class Settings : AutoConfiguration
         [ConfigComment("The folder for wildcard (.txt) files, under Data.\nDefaults to 'Wildcards'")]
         public string WildcardsFolder = "Wildcards";
 
+        [ConfigComment("The folder for autocompletions (.txt or .csv) files, under Data.\nDefaults to 'Autocompletions'")]
+        public string AutocompletionsFolder = "Autocompletions";
+
         [ConfigComment("When true, output paths always have the username as a folder.\nWhen false, this will be skipped.\nKeep this on in multi-user environments.")]
         public bool AppendUserNameToOutputPath = true;
 

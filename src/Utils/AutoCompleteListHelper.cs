@@ -14,7 +14,7 @@ public class AutoCompleteListHelper
     public static ConcurrentDictionary<string, string[]> AutoCompletionLists = new();
 
     /// <summary>Gets the correct folder path to use.</summary>
-    public static string FolderPath => $"{Program.DataDir}/Autocompletions";
+    public static string FolderPath => Utilities.CombinePathWithAbsolute(Program.ServerSettings.Paths.DataPath, Program.ServerSettings.Paths.AutocompletionsFolder);
 
     /// <summary>Initializes the helper.</summary>
     public static void Init()

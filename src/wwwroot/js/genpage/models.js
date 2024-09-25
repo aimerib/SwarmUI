@@ -409,15 +409,16 @@ class ModelBrowserWrapper {
         let reverse = localStorage.getItem(`models_${this.subType}_sort_reverse`) == 'true';
         let sortElem = document.getElementById(`models_${this.subType}_sort_by`);
         let sortReverseElem = document.getElementById(`models_${this.subType}_sort_reverse`);
-        // let fix = null;
-        // if (sortElem) {
-        //     sortBy = sortElem.value;
-        //     reverse = sortReverseElem.checked;
-        // }
+        let fix = null;
+        if (sortElem) {
+            sortBy = sortElem.value;
+            reverse = sortReverseElem.checked;
+        }
         // else { // first call happens before headers are added built atm
         //     fix = () => {
         //         let sortElem = document.getElementById(`models_${this.subType}_sort_by`);
         //         let sortReverseElem = document.getElementById(`models_${this.subType}_sort_reverse`);
+        //         if (sortElem && sortReverseElem) {
         //         sortElem.value = sortBy;
         //         sortReverseElem.checked = reverse;
         //         sortElem.addEventListener('change', () => {
@@ -428,6 +429,10 @@ class ModelBrowserWrapper {
         //             localStorage.setItem(`models_${this.subType}_sort_reverse`, sortReverseElem.checked);
         //             this.browser.update();
         //         });
+        //         }
+        //         else {
+        //             setTimeout(fix, 100);
+        //         }
         //     }
         // }
         if (!sortElem) {
@@ -478,9 +483,9 @@ class ModelBrowserWrapper {
                 files = [autoFile, noneFile].concat(files);
             }
             callback(data.folders.sort((a, b) => a.localeCompare(b)), files);
-            if (fix) {
-                fix();
-            }
+            // if (fix) {
+            //     fix();
+            // }
         }, 0, e => {
             showError(`Failed to list models: ${e}`);
             callback([], []);

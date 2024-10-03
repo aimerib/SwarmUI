@@ -879,13 +879,13 @@ public class WorkflowGeneratorSteps
                 }
             }
         }, -5);
-        JArray doMaskShrinkApply(WorkflowGenerator g, JArray imgIn)
+        static JArray doMaskShrinkApply(WorkflowGenerator g, JArray imgIn)
         {
             (string boundsNode, string croppedMask, string masked) = g.MaskShrunkInfo;
             g.MaskShrunkInfo = (null, null, null);
             if (boundsNode is not null)
             {
-                imgIn = g.RecompositeCropped(boundsNode, [croppedMask, 0], g.FinalInputImage, imgIn);
+                imgIn = g.RecompositeCropped(boundsNode, new JArray(croppedMask, 0), g.FinalInputImage, imgIn);
             }
             else if (g.UserInput.Get(T2IParamTypes.InitImageRecompositeMask, true) && g.FinalMask is not null && !g.NodeHelpers.ContainsKey("recomposite_mask_result"))
             {
@@ -893,6 +893,14 @@ public class WorkflowGeneratorSteps
             }
             g.NodeHelpers["recomposite_mask_result"] = $"{imgIn[0]}";
             return imgIn;
+        }
+        static (T2IModel, JArray, JArray, JArray) LoadRefinerModels(WorkflowGenerator g, string prefix)
+        {
+            T2IModel refineModel = g.UserInput.Get(T2IParamTypes.RefinerModel, g.FinalLoadedModel);
+            g.NoVAEOverride = refineModel.ModelClass?.CompatClass != g.FinalLoadedModel.ModelClass?.CompatClass;
+            var (loadedModel, model, clip, vae) = g.CreateStandardModelLoader(refineModel, $"{prefix}Refiner", $"{prefix}model");
+            g.NoVAEOverride = false;
+            return (refineModel, model, clip, vae);
         }
         #endregion
         #region Refiner
@@ -902,106 +910,101 @@ public class WorkflowGeneratorSteps
                 && g.UserInput.TryGet(T2IParamTypes.RefinerControl, out double refinerControl)
                 && g.UserInput.TryGet(ComfyUIBackendExtension.RefinerUpscaleMethod, out string upscaleMethod))
             {
-                g.IsRefinerStage = true;
-                JArray origVae = g.FinalVae, prompt = g.FinalPrompt, negPrompt = g.FinalNegativePrompt;
-                bool modelMustReencode = false;
-                if (g.UserInput.TryGet(T2IParamTypes.RefinerModel, out T2IModel refineModel) && refineModel is not null)
+                int refinerCount = g.UserInput.Get(T2IParamTypes.RefinerCount, 1);
+                JArray currentSamples = g.FinalSamples;
+
+                for (int refinerIteration = 0; refinerIteration < refinerCount; refinerIteration++)
                 {
-                    T2IModel baseModel = g.UserInput.Get(T2IParamTypes.Model);
-                    modelMustReencode = refineModel.ModelClass?.CompatClass != "stable-diffusion-xl-v1-refiner" || baseModel.ModelClass?.CompatClass != "stable-diffusion-xl-v1";
-                    g.NoVAEOverride = refineModel.ModelClass?.CompatClass != baseModel.ModelClass?.CompatClass;
-                    g.FinalLoadedModel = refineModel;
-                    (g.FinalLoadedModel, g.FinalModel, g.FinalClip, g.FinalVae) = g.CreateStandardModelLoader(refineModel, "Refiner", "20");
-                    prompt = g.CreateConditioning(g.UserInput.Get(T2IParamTypes.Prompt), g.FinalClip, refineModel, true);
-                    negPrompt = g.CreateConditioning(g.UserInput.Get(T2IParamTypes.NegativePrompt), g.FinalClip, refineModel, false);
-                    g.NoVAEOverride = false;
-                }
-                bool doSave = g.UserInput.Get(T2IParamTypes.SaveIntermediateImages, false);
-                bool doUspcale = g.UserInput.TryGet(T2IParamTypes.RefinerUpscale, out double refineUpscale) && refineUpscale != 1;
-                // TODO: Better same-VAE check
-                bool doPixelUpscale = doUspcale && (upscaleMethod.StartsWith("pixel-") || upscaleMethod.StartsWith("model-"));
-                if (modelMustReencode || doPixelUpscale || doSave || g.MaskShrunkInfo.Item1 is not null)
-                {
-                    g.CreateVAEDecode(origVae, g.FinalSamples, "24");
-                    JArray pixelsNode = ["24", 0];
-                    pixelsNode = doMaskShrinkApply(g, pixelsNode);
-                    if (doSave)
+                    g.IsRefinerStage = true;
+                    string iterationPrefix = $"refine_{refinerIteration}_";
+
+                    (T2IModel refineModel, JArray model, JArray clip, JArray vae) = LoadRefinerModels(g, iterationPrefix);
+                    bool modelMustReencode = refineModel != g.FinalLoadedModel;
+
+                    JArray prompt = g.CreateConditioning(g.UserInput.Get(T2IParamTypes.Prompt), clip, refineModel, true, $"{iterationPrefix}pos_prompt");
+                    JArray negPrompt = g.CreateConditioning(g.UserInput.Get(T2IParamTypes.NegativePrompt), clip, refineModel, false, $"{iterationPrefix}neg_prompt");
+                    bool doSave = g.UserInput.Get(T2IParamTypes.SaveIntermediateImages, false);
+                    double refineUpscale = g.UserInput.Get(T2IParamTypes.RefinerUpscale, 1.0);
+                    if (refineUpscale != 1.0)
                     {
-                        g.CreateImageSaveNode(pixelsNode, "29");
-                    }
-                    if (doPixelUpscale)
-                    {
-                        if (upscaleMethod.StartsWith("pixel-"))
+                        string decodeNode = g.CreateVAEDecode(g.FinalVae, currentSamples, $"{iterationPrefix}decode");
+                        JArray pixelsNode = new JArray(decodeNode, 0);
+                        pixelsNode = doMaskShrinkApply(g, pixelsNode);
+                        if (doSave)
                         {
-                            g.CreateNode("ImageScaleBy", new JObject()
+                            g.CreateImageSaveNode(pixelsNode, $"{iterationPrefix}save");
+                        }
+                        bool doPixelUpscale = !upscaleMethod.StartsWith("latent-");
+                        if (doPixelUpscale)
+                        {
+                            if (upscaleMethod.StartsWith("pixel-"))
                             {
-                                ["image"] = pixelsNode,
-                                ["upscale_method"] = upscaleMethod.After("pixel-"),
+                                string scaleNode = g.CreateNode("ImageScaleBy", new JObject()
+                                {
+                                    ["image"] = pixelsNode,
+                                    ["upscale_method"] = upscaleMethod.After("pixel-"),
+                                    ["scale_by"] = refineUpscale
+                                }, $"{iterationPrefix}upscale");
+                                pixelsNode = new JArray(scaleNode, 0);
+                            }
+                            else if (upscaleMethod.StartsWith("model-"))
+                            {
+                                string modelLoaderNode = g.CreateNode("UpscaleModelLoader", new JObject()
+                                {
+                                    ["model_name"] = upscaleMethod.After("model-")
+                                }, $"{iterationPrefix}upscale_model");
+                                string upscaleNode = g.CreateNode("ImageUpscaleWithModel", new JObject()
+                                {
+                                    ["upscale_model"] = new JArray(modelLoaderNode, 0),
+                                    ["image"] = pixelsNode
+                                }, $"{iterationPrefix}upscale_with_model");
+                                string scaleNode = g.CreateNode("ImageScale", new JObject()
+                                {
+                                    ["image"] = new JArray(upscaleNode, 0),
+                                    ["width"] = (int)Math.Round(g.UserInput.GetImageWidth() * refineUpscale),
+                                    ["height"] = (int)Math.Round(g.UserInput.GetImageHeight() * refineUpscale),
+                                    ["upscale_method"] = "bilinear",
+                                    ["crop"] = "disabled"
+                                }, $"{iterationPrefix}scale");
+                                pixelsNode = new JArray(scaleNode, 0);
+                            }
+                        }
+                        else // latent upscale
+                        {
+                            string upscaleNode = g.CreateNode("LatentUpscaleBy", new JObject()
+                            {
+                                ["samples"] = currentSamples,
+                                ["upscale_method"] = upscaleMethod.After("latent-"),
                                 ["scale_by"] = refineUpscale
-                            }, "26");
+                            }, $"{iterationPrefix}upscale");
+                            currentSamples = new JArray(upscaleNode, 0);
                         }
-                        else
+
+                        if (modelMustReencode || doPixelUpscale)
                         {
-                            g.CreateNode("UpscaleModelLoader", new JObject()
-                            {
-                                ["model_name"] = upscaleMethod.After("model-")
-                            }, "27");
-                            g.CreateNode("ImageUpscaleWithModel", new JObject()
-                            {
-                                ["upscale_model"] = new JArray() { "27", 0 },
-                                ["image"] = pixelsNode
-                            }, "28");
-                            g.CreateNode("ImageScale", new JObject()
-                            {
-                                ["image"] = new JArray() { "28", 0 },
-                                ["width"] = (int)Math.Round(g.UserInput.GetImageWidth() * refineUpscale),
-                                ["height"] = (int)Math.Round(g.UserInput.GetImageHeight() * refineUpscale),
-                                ["upscale_method"] = "bilinear",
-                                ["crop"] = "disabled"
-                            }, "26");
-                        }
-                        pixelsNode = ["26", 0];
-                        if (refinerControl <= 0)
-                        {
-                            g.FinalImageOut = pixelsNode;
-                            return;
+                            string encodeNode = g.CreateVAEEncode(g.FinalVae, pixelsNode, $"{iterationPrefix}encode");
+                            currentSamples = new JArray(encodeNode, 0);
                         }
                     }
-                    if (modelMustReencode || doPixelUpscale)
+
+                    int steps = g.UserInput.Get(T2IParamTypes.RefinerSteps, g.UserInput.Get(T2IParamTypes.Steps));
+                    double cfg = g.UserInput.Get(T2IParamTypes.RefinerCFGScale, g.UserInput.Get(T2IParamTypes.CFGScale));
+                    string samplerNode = g.CreateKSampler(model, prompt, negPrompt, currentSamples, cfg, steps,
+                        (int)Math.Round(steps * (1 - refinerControl)), 10000,
+                        g.UserInput.Get(T2IParamTypes.Seed) + 1 + refinerIteration, false, method != "StepSwapNoisy",
+                        id: $"{iterationPrefix}sampler", doTiled: g.UserInput.Get(T2IParamTypes.RefinerDoTiling, false));
+
+                    currentSamples = new JArray(samplerNode, 0);
+                    g.IsRefinerStage = false;
+
+                    if (refinerIteration < refinerCount - 1)
                     {
-                        g.CreateVAEEncode(g.FinalVae, pixelsNode, "25");
-                        g.FinalSamples = ["25", 0];
+                        string decodeFinalNode = g.CreateVAEDecode(vae, currentSamples, $"{iterationPrefix}decode_final");
+                        string encodeFinalNode = g.CreateVAEEncode(vae, new JArray(decodeFinalNode, 0), $"{iterationPrefix}encode_final");
+                        currentSamples = new JArray(encodeFinalNode, 0);
                     }
                 }
-                if (doUspcale && upscaleMethod.StartsWith("latent-"))
-                {
-                    g.CreateNode("LatentUpscaleBy", new JObject()
-                    {
-                        ["samples"] = g.FinalSamples,
-                        ["upscale_method"] = upscaleMethod.After("latent-"),
-                        ["scale_by"] = refineUpscale
-                    }, "26");
-                    g.FinalSamples = ["26", 0];
-                }
-                JArray model = g.FinalModel;
-                if (g.UserInput.TryGet(ComfyUIBackendExtension.RefinerHyperTile, out int tileSize))
-                {
-                    string hyperTileNode = g.CreateNode("HyperTile", new JObject()
-                    {
-                        ["model"] = model,
-                        ["tile_size"] = tileSize,
-                        ["swap_size"] = 2, // TODO: Do these other params matter?
-                        ["max_depth"] = 0,
-                        ["scale_depth"] = false
-                    });
-                    model = [hyperTileNode, 0];
-                }
-                int steps = g.UserInput.Get(T2IParamTypes.RefinerSteps, g.UserInput.Get(T2IParamTypes.Steps));
-                double cfg = g.UserInput.Get(T2IParamTypes.RefinerCFGScale, g.UserInput.Get(T2IParamTypes.CFGScale));
-                g.CreateKSampler(model, prompt, negPrompt, g.FinalSamples, cfg, steps, (int)Math.Round(steps * (1 - refinerControl)), 10000,
-                    g.UserInput.Get(T2IParamTypes.Seed) + 1, false, method != "StepSwapNoisy", id: "23", doTiled: g.UserInput.Get(T2IParamTypes.RefinerDoTiling, false));
-                g.FinalSamples = ["23", 0];
-                g.IsRefinerStage = false;
+                g.FinalSamples = currentSamples;
             }
         }, -4);
         #endregion

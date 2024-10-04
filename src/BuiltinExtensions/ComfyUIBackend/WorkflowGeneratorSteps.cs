@@ -925,7 +925,7 @@ public class WorkflowGeneratorSteps
                     JArray negPrompt = g.CreateConditioning(g.UserInput.Get(T2IParamTypes.NegativePrompt), clip, refineModel, false, $"{iterationPrefix}neg_prompt");
                     bool doSave = g.UserInput.Get(T2IParamTypes.SaveIntermediateImages, false);
                     double refineUpscale = g.UserInput.Get(T2IParamTypes.RefinerUpscale, 1.0);
-                    if (refineUpscale != 1.0)
+                    if (refineUpscale != 1.0 && refinerIteration == 0)
                     {
                         string decodeNode = g.CreateVAEDecode(g.FinalVae, currentSamples, $"{iterationPrefix}decode");
                         JArray pixelsNode = new JArray(decodeNode, 0);

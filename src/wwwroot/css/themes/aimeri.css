@@ -1,0 +1,92 @@
+@import url('/css/themes/modern.css');
+:root {
+    --primary: #008772;
+    --background-soft: #27272a;
+    --background-gray: #222226;
+    --background-gray-danger: #361f1f;
+    --shadow: #3f3f46;
+    --light-border: #3f3f46;
+    --popup-front: #ffffff;
+    --button-foreground-disabled: #aaaaaa;
+    --text-soft: #aaa;
+    --background: #161616;
+    --text: #e4e4e4;
+    --emphasis: var(--primary);
+    --emphasis-soft: #006d5b;
+    --button-text: #fff;
+    --background-panel: #202020;
+    --background-panel-subtle: rgba(255, 255, 255, 0.03);
+    --emphasis-text: var(--button-text);
+    --border-color: var(--primary);
+    --button-background: #4b4b4b;
+    --range-track-color: #1d1d1d;
+    --range-thumb-color: var(--primary);
+}
+
+/* Personal Preference */
+.bottom-info-bar-component {
+    min-height: fit-content !important;
+    padding: 5px;
+}
+@media screen and (max-width: 600px) {
+    .param_view_name {
+        color: #888;
+        font-weight: bold;
+    }
+
+    .param_view {
+        color: #bbb;
+    }
+
+    .tag-text {
+        background-color: #2a2a2a;
+        border-radius: 4px;
+    }
+
+    .model-block-menu-button {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background-color: rgba(0, 0, 0, 0.5);
+        color: #fff;
+        border-radius: 50%;
+        width: 30px;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+    }
+
+    /* Color variations for different tag types */
+    .tag-type-0 {
+        background-color: #3a3a3a;
+    }
+    .tag-type-1 {
+        background-color: #4a3a3a;
+    }
+    .tag-type-2 {
+        background-color: #3a4a3a;
+    }
+    .tag-type-3 {
+        background-color: #3a3a4a;
+    }
+    .tag-type-4 {
+        background-color: #4a4a3a;
+    }
+    .tag-type-5 {
+        background-color: #4a3a4a;
+    }
+    .tag-type-6 {
+        background-color: #3a4a4a;
+    }
+    .tag-type-7 {
+        background-color: #5a3a3a;
+    }
+    .tag-type-8 {
+        background-color: #3a5a3a;
+    }
+    .tag-type-9 {
+        background-color: #3a3a5a;
+    }
+}

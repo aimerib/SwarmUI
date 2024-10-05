@@ -384,6 +384,27 @@ class ModelBrowserWrapper {
     }
 
     listModelFolderAndFiles(path, isRefresh, callback, depth) {
+        const initSortControls = () => {
+            const sortElem = document.getElementById(`models_${this.subType}_sort_by`);
+            const sortReverseElem = document.getElementById(`models_${this.subType}_sort_reverse`);
+
+            if (sortElem && sortReverseElem) {
+                sortElem.value = sortBy;
+                sortReverseElem.checked = reverse;
+
+                const updateSort = () => {
+                    localStorage.setItem(`models_${this.subType}_sort_by`, sortElem.value);
+                    localStorage.setItem(`models_${this.subType}_sort_reverse`, sortReverseElem.checked);
+                    this.browser.update();
+                };
+
+                sortElem.addEventListener('change', updateSort);
+                sortReverseElem.addEventListener('change', updateSort);
+            } else {
+                // If elements are not available, retry after a short delay
+                setTimeout(initSortControls, 100);
+            }
+        };
         let sortBy = localStorage.getItem(`models_${this.subType}_sort_by`) ?? 'Name';
         let reverse = localStorage.getItem(`models_${this.subType}_sort_reverse`) == 'true';
         let sortElem = document.getElementById(`models_${this.subType}_sort_by`);
@@ -393,21 +414,32 @@ class ModelBrowserWrapper {
             sortBy = sortElem.value;
             reverse = sortReverseElem.checked;
         }
-        else { // first call happens before headers are added built atm
-            fix = () => {
-                let sortElem = document.getElementById(`models_${this.subType}_sort_by`);
-                let sortReverseElem = document.getElementById(`models_${this.subType}_sort_reverse`);
-                sortElem.value = sortBy;
-                sortReverseElem.checked = reverse;
-                sortElem.addEventListener('change', () => {
-                    localStorage.setItem(`models_${this.subType}_sort_by`, sortElem.value);
-                    this.browser.update();
-                });
-                sortReverseElem.addEventListener('change', () => {
-                    localStorage.setItem(`models_${this.subType}_sort_reverse`, sortReverseElem.checked);
-                    this.browser.update();
-                });
-            }
+        // else { // first call happens before headers are added built atm
+        //     fix = () => {
+        //         let sortElem = document.getElementById(`models_${this.subType}_sort_by`);
+        //         let sortReverseElem = document.getElementById(`models_${this.subType}_sort_reverse`);
+        //         if (sortElem && sortReverseElem) {
+        //         sortElem.value = sortBy;
+        //         sortReverseElem.checked = reverse;
+        //         sortElem.addEventListener('change', () => {
+        //             localStorage.setItem(`models_${this.subType}_sort_by`, sortElem.value);
+        //             this.browser.update();
+        //         });
+        //         sortReverseElem.addEventListener('change', () => {
+        //             localStorage.setItem(`models_${this.subType}_sort_reverse`, sortReverseElem.checked);
+        //             this.browser.update();
+        //         });
+        //         }
+        //         else {
+        //             setTimeout(fix, 100);
+        //         }
+        //     }
+        // }
+        if (!sortElem) {
+            initSortControls();
+        } else {
+            sortBy = sortElem.value;
+            reverse = sortReverseElem.checked;
         }
         let prefix = path == '' ? '' : (path.endsWith('/') ? path : `${path}/`);
         genericRequest('ListModels', {'path': path, 'depth': Math.round(depth), 'subtype': this.subType, 'sortBy': sortBy, 'sortReverse': reverse}, data => {
@@ -451,9 +483,9 @@ class ModelBrowserWrapper {
                 files = [autoFile, noneFile].concat(files);
             }
             callback(data.folders.sort((a, b) => a.localeCompare(b)), files);
-            if (fix) {
-                fix();
-            }
+            // if (fix) {
+            //     fix();
+            // }
         }, 0, e => {
             showError(`Failed to list models: ${e}`);
             callback([], []);
@@ -744,7 +776,14 @@ function updateLoraList() {
     for (let lora of currentLoras) {
         let div = createDiv(null, 'preset-in-list');
         div.dataset.lora_name = lora;
-        div.innerText = cleanModelName(lora);
+        let text = document.createElement('span');
+        text.innerText = cleanModelName(lora);
+        // div.innerText = cleanModelName(lora);
+        div.appendChild(text);
+        text.className = "presets-in-list-text";
+        let weightLabel = document.createElement('span');
+        weightLabel.innerText = 'Weight: ';
+        // div.appendChild(weightLabel);
         let weightInput = document.createElement('input');
         weightInput.className = 'lora-weight-input';
         weightInput.type = 'number';
@@ -769,8 +808,11 @@ function updateLoraList() {
             updateLoraList();
             sdLoraBrowser.browser.planRerender(5);
         });
-        div.appendChild(weightInput);
-        div.appendChild(removeButton);
+        let loraControls = document.createElement('div');
+        loraControls.appendChild(weightLabel);
+        loraControls.appendChild(weightInput);
+        loraControls.appendChild(removeButton);
+        div.appendChild(loraControls);
         view.appendChild(div);
     }
     getRequiredElementById('current_loras_wrapper').style.display = currentLoras.length > 0 ? 'inline-block' : 'none';

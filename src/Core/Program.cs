@@ -641,7 +641,7 @@ public class Program
             {
                 if (equalsCharIndex == 0 || equalsCharIndex == (key.Length - 1))
                 {
-                    throw new SwarmUserErrorException($"Error: Invalid commandline argument '{arg}'");
+                    throw new InvalidDataException($"Error: Invalid commandline argument '{arg}'");
                 }
                 value = key[(equalsCharIndex + 1)..];
                 key = key[..equalsCharIndex];

@@ -70,7 +70,7 @@ function toggleAutoLoadImages() {
 function clickImageInBatch(div) {
     let imgElem = div.getElementsByTagName('img')[0];
     if (currentImgSrc == div.dataset.src) {
-        imageFullView.showImage(div.dataset.src, div.dataset.metadata);
+        showFullImage(div.dataset.src, div.dataset.metadata);
         return;
     }
     setCurrentImage(div.dataset.src, div.dataset.metadata, div.dataset.batch_id ?? '', imgElem.dataset.previewGrow == 'true');
@@ -207,6 +207,356 @@ function formatMetadata(metadata) {
     return result;
 }
 
+/** Mobile-specific helper class for handling image full view modal */
+class MobileImageFullViewHelper {
+    constructor() {
+        // Create mobile-specific modal elements
+        this.createMobileModal();
+
+        // Bind touch event handlers
+        this.bindEvents();
+
+        // Initialize transformation states
+        this.currentScale = 1;
+        this.initialDistance = 0;
+        this.translateX = 0;
+        this.translateY = 0;
+        this.startX = 0;
+        this.startY = 0;
+        this.isDragging = false;
+        this.isPinching = false;
+        this.lastTouchX = 0;
+        this.lastTouchY = 0;
+
+
+        // Initialize variables for double-tap detection
+        this.lastTap = 0;
+        this.tapTimeout = 300; // Maximum time between taps for double-tap
+        this.tapDistance = 50; // Maximum distance (in pixels) between taps for double-tap
+
+        // Bind the double-tap event
+        this.pixelRatio = window.devicePixelRatio || 1;
+    }
+
+    /** Binds double-tap event listener */
+    bindDoubleTap() {
+        this.modal.addEventListener('touchend', this.onDoubleTap.bind(this));
+    }
+
+    /** Handles double-tap gesture to reset scale and re-center image */
+    onDoubleTap(e) {
+        const currentTime = new Date().getTime();
+        const tapLength = currentTime - this.lastTap;
+        const touch = e.changedTouches[0];
+        const tapX = touch.clientX;
+        const tapY = touch.clientY;
+        if (tapLength < this.tapTimeout && tapLength > 0) {
+            // Check distance between taps
+            const deltaX = tapX - this.lastTapX;
+            const deltaY = tapY - this.lastTapY;
+            const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+            if (distance < this.tapDistance) {
+                // Double-tap detected
+                this.resetTransform();
+            }
+        }
+        this.lastTap = currentTime;
+        this.lastTapX = tapX;
+        this.lastTapY = tapY;
+    }
+
+    resetTransform() {
+        this.currentScale = 1;
+        this.translateX = 0;
+        this.translateY = 0;
+        this.drawImage();
+    }
+
+    /** Creates the mobile modal structure dynamically */
+    createMobileModal() {
+        // Check if the mobile modal already exists to prevent duplicates
+        if (document.getElementById('mobile_image_fullview_modal')) return;
+
+        // Create modal container
+        this.modal = document.createElement('div');
+        this.modal.id = 'mobile_image_fullview_modal';
+        this.modal.className = 'mobile-modal';
+        this.modal.style.display = 'none';
+        this.modal.style.position = 'fixed';
+        this.modal.style.top = '0';
+        this.modal.style.left = '0';
+        this.modal.style.width = '100%';
+        this.modal.style.height = '100%';
+        this.modal.style.backgroundColor = 'var(--background-soft)';
+        this.modal.style.zIndex = '10000';
+        this.modal.style.justifyContent = 'center';
+        this.modal.style.alignItems = 'center';
+        this.modal.style.flexDirection = 'column';
+        this.modal.style.overflow = 'hidden';
+
+        // Create canvas container
+        this.canvasContainer = document.createElement('div');
+        this.canvasContainer.id = 'mobile_image_fullview_container';
+        this.canvasContainer.style.position = 'relative';
+
+        // Create canvas element
+        this.canvas = document.createElement('canvas');
+        this.canvas.id = 'mobile_image_fullview_canvas';
+        this.canvas.style.touchAction = 'none'; // Prevent default touch actions
+        this.canvas.width = window.innerWidth;
+        this.canvas.height = window.innerHeight;
+        this.canvas.style.maxWidth = '100%';
+        this.canvas.style.maxHeight = '100%';
+        this.canvas.style.borderRadius = '8px';
+        this.canvas.style.backgroundColor = 'transparent';
+        this.ctx = this.canvas.getContext('2d');
+
+        // Scale the context to account for device pixel ratio
+        this.ctx.scale(this.pixelRatio, this.pixelRatio);
+
+        // Create metadata container
+        this.metadataContainer = document.createElement('div');
+        this.metadataContainer.id = 'mobile_image_fullview_metadata';
+
+        // Append elements
+        this.canvasContainer.appendChild(this.canvas);
+        this.canvasContainer.appendChild(this.metadataContainer);
+        this.modal.appendChild(this.canvasContainer);
+
+        this.modal.appendChild(this.metadataContainer);
+        document.body.appendChild(this.modal);
+    }
+
+    /** Binds touch and click event listeners for gestures and controls */
+    bindEvents() {
+        this.canvas.addEventListener('touchstart', this.onTouchStart.bind(this), { passive: false });
+        this.canvas.addEventListener('touchmove', this.onTouchMove.bind(this), { passive: false });
+        this.canvas.addEventListener('touchend', this.onTouchEnd.bind(this), { passive: false });
+        // Bind the double-tap event
+        this.canvas.addEventListener('touchend', this.onDoubleTap.bind(this));
+        // Close modal when tapping outside the image (optional, based on your UI)
+        this.modal.addEventListener('touchstart', (e) => {
+            if (e.target === this.modal) {
+                this.close();
+            }
+        });
+    }
+
+    /** Display the image in full-screen mode with metadata */
+    showImage(src, metadata) {
+        createImageActionButtons(src, this.img, metadata, this.modal, true);
+        // Load the image
+        this.image = new Image();
+        this.image.crossOrigin = 'Anonymous'; // Handle cross-origin if necessary
+        this.image.onload = () => {
+            this.canvas.width = this.image.naturalWidth;
+            this.canvas.height = this.image.naturalHeight;
+            // Reset transformations
+            this.resetTransform();
+            // Calculate initial scale to ensure at least two connected edges are touched
+            this.calculateInitialScale();
+            // Adjust translations based on initial scale
+            this.constrainTranslation();
+            // Initial draw
+            this.drawImage();
+            // Display metadata
+            this.metadataContainer.innerHTML = formatMetadata(metadata);
+            // Remove ", " separators from the metadata container on mobile
+            this.removeCommasFromMetadata();
+            // Show the modal
+            this.modal.style.display = 'flex';
+        };
+        this.image.onerror = (e) => {
+            console.error( `Failed to load image: ${src}`, e);
+            const canvasWidth = this.canvas.width / this.pixelRatio;
+            const canvasHeight = this.canvas.height / this.pixelRatio;
+            this.ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+            this.ctx.fillStyle = '#ff0000';
+            this.ctx.font = '20px Arial';
+            this.ctx.textAlign = 'center';
+            this.ctx.fillText('Failed to load image', this.canvas.width / 2, this.canvas.height / 2);
+        };
+        this.image.src = `${window.location.origin}/${src}`;
+    }
+
+
+    /** Helper method to remove ", " separators from the metadata container */
+    removeCommasFromMetadata() {
+        // Get all child nodes of the metadata container
+        const childNodes = Array.from(this.metadataContainer.childNodes);
+
+        childNodes.forEach((node, index) => {
+            // If the node is a text node and contains ", ", remove it
+            if (node.nodeType === Node.TEXT_NODE && node.textContent.trim() === ',') {
+                this.metadataContainer.removeChild(node);
+            }
+        });
+    }
+
+    /** Calculate the initial scale to ensure the image touches at least two connected edges */
+    calculateInitialScale() {
+        const canvasWidth = this.canvas.width / this.pixelRatio;
+        const canvasHeight = this.canvas.height / this.pixelRatio;
+        const imageWidth = this.image.naturalWidth;
+        const imageHeight = this.image.naturalHeight;
+
+        const scaleX = canvasWidth / imageWidth;
+        const scaleY = canvasHeight / imageHeight;
+
+        // Choose the larger scale to ensure at least two connected edges
+        this.currentScale = Math.max(scaleX, scaleY, 1); // Prevent scaling below 1
+
+        // Reset translations
+        this.translateX = 0;
+        this.translateY = 0;
+    }
+
+    /** Close the mobile modal */
+    close() {
+        this.modal.style.display = 'none';
+        // Clear the canvas
+        const canvasWidth = this.canvas.width / this.pixelRatio;
+        const canvasHeight = this.canvas.height / this.pixelRatio;
+        this.ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+        this.metadataContainer.innerHTML = '';
+    }
+
+    drawImage() {
+        if (!this.image) return;
+
+        const ctx = this.canvas.getContext('2d');
+        const canvasWidth = this.canvas.width / this.pixelRatio;
+        const canvasHeight = this.canvas.height / this.pixelRatio;
+
+        ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+
+        ctx.save();
+        ctx.translate(this.translateX, this.translateY);
+        ctx.scale(this.currentScale, this.currentScale);
+        ctx.drawImage(this.image, 0, 0);
+        ctx.restore();
+    }
+
+    onTouchStart(e) {
+        if (e.touches.length === 1) {
+        // Single touch start - panning
+            this.isDragging = true;
+
+            this.lastTouchX = e.touches[0].clientX;
+            this.lastTouchY = e.touches[0].clientY;
+        } else if (e.touches.length === 2) {
+        // Two fingers - pinch to zoom
+            this.isPinching = true;
+            this.initialDistance = this.getDistance(e.touches[0], e.touches[1]);
+            this.initialScale = this.currentScale;
+        }
+    }
+
+    onTouchMove(e) {
+        e.preventDefault();
+        const canvasWidth = this.canvas.width;
+        const canvasHeight = this.canvas.height;
+        const imageWidth = this.image.naturalWidth * this.currentScale;
+        const imageHeight = this.image.naturalHeight * this.currentScale;
+
+
+        if (this.isDragging && e.touches.length === 1) {
+            const touch = e.touches[0];
+            const deltaX = touch.clientX - this.lastTouchX;
+            const deltaY = touch.clientY - this.lastTouchY;
+
+            // Update translation
+            this.translateX += deltaX * this.pixelRatio;
+            this.translateY += deltaY * this.pixelRatio;
+
+            // Constrain translation
+            this.translateX = Math.min(0, Math.max(canvasWidth - imageWidth, this.translateX));
+            this.translateY = Math.min(0, Math.max(canvasHeight - imageHeight, this.translateY));
+
+            this.lastTouchX = touch.clientX;
+            this.lastTouchY = touch.clientY;
+
+        } else if (this.isPinching && e.touches.length === 2) {
+            const currentDistance = this.getDistance(e.touches[0], e.touches[1]);
+            const scaleFactor = currentDistance / this.initialDistance;
+
+            const prevScale = this.currentScale;
+            this.currentScale = Math.min(Math.max(this.initialScale * scaleFactor, 1), 4);
+
+            const zoomCenterX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+            const zoomCenterY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+
+            // Adjust translation to zoom towards the center of the pinch
+            this.translateX += (zoomCenterX - this.translateX) * (1 - this.currentScale / prevScale);
+            this.translateY += (zoomCenterY - this.translateY) * (1 - this.currentScale / prevScale);
+
+        }
+
+        this.constrainTranslation();
+        this.drawImage();
+    }
+
+    onTouchEnd(e) {
+        if (this.isDragging && e.touches.length === 0) {
+            this.isDragging = false;
+        }
+        if (this.isPinching && e.touches.length < 2) {
+            this.isPinching = false;
+        }
+    }
+
+    /** Calculate distance between two touch points */
+    getDistance(touch1, touch2) {
+        const dx = touch1.clientX - touch2.clientX;
+        const dy = touch1.clientY - touch2.clientY;
+        return Math.sqrt(dx * dx + dy * dy);
+    }
+
+    /** Calculate the center point between two touches */
+    getTouchCenter(touch1, touch2) {
+        return {
+            x: (touch1.pageX + touch2.pageX) / 2,
+            y: (touch1.pageY + touch2.pageY) / 2
+        };
+    }
+
+    /** Adjust canvas size on window resize */
+    resizeCanvas() {
+        // Update canvas dimensions
+        this.canvas.width = window.innerWidth * this.pixelRatio;
+        this.canvas.height = window.innerHeight * this.pixelRatio;
+        this.canvas.style.width = '100%';
+        this.canvas.style.height = '100%';
+        this.ctx.scale(this.pixelRatio, this.pixelRatio);
+
+        if (this.image) {
+            this.calculateInitialScale();
+            this.constrainTranslation();
+            this.drawImage();
+        }
+    }
+
+    /** Constrains the translation to ensure at least two connected edges are touched */
+    constrainTranslation() {
+        const canvasWidth = this.canvas.width;
+        const canvasHeight = this.canvas.height;
+        const imageWidth = this.image.naturalWidth * this.currentScale;
+        const imageHeight = this.image.naturalHeight * this.currentScale;
+
+        if (imageWidth <= canvasWidth) {
+            this.translateX = (canvasWidth - imageWidth) / 2;
+        } else {
+            this.translateX = Math.min(0, Math.max(canvasWidth - imageWidth, this.translateX));
+        }
+
+        if (imageHeight <= canvasHeight) {
+            this.translateY = (canvasHeight - imageHeight) / 2;
+        } else {
+            this.translateY = Math.min(0, Math.max(canvasHeight - imageHeight, this.translateY));
+        }
+    }
+}
+
 /** Central helper class to handle the 'image full view' modal. */
 class ImageFullViewHelper {
     constructor() {
@@ -216,6 +566,9 @@ class ImageFullViewHelper {
         this.modalJq = $('#image_fullview_modal');
         this.noClose = false;
         document.addEventListener('click', (e) => {
+            if (e.target.closest('#current_image button') || e.touches?.length > 0) {
+                return; // Do not interfere with button clicks
+            }
             if (e.target.tagName == 'BODY') {
                 return; // it's impossible on the genpage to actually click body, so this indicates a bugged click, so ignore it
             }
@@ -231,6 +584,9 @@ class ImageFullViewHelper {
         this.lastMouseY = 0;
         this.isDragging = false;
         this.didDrag = false;
+        this.initialScale = 1;
+        this.currentScale = 1;
+        this.initialDistance = 0;
         this.content.addEventListener('wheel', this.onWheel.bind(this));
         this.content.addEventListener('mousedown', this.onMouseDown.bind(this));
         document.addEventListener('mouseup', this.onGlobalMouseUp.bind(this));
@@ -239,6 +595,10 @@ class ImageFullViewHelper {
 
     getImg() {
         return getRequiredElementById('imageview_popup_modal_img');
+    }
+
+    getCurrentImage() {
+        return getRequiredElementById('current_image');
     }
 
     getHeightPercent() {
@@ -260,12 +620,36 @@ class ImageFullViewHelper {
         if (e.button == 2) { // right-click
             return;
         }
-        this.lastMouseX = e.clientX;
-        this.lastMouseY = e.clientY;
-        this.isDragging = true;
-        this.getImg().style.cursor = 'grabbing';
+        this.startDrag(e.clientX, e.clientY);
         e.preventDefault();
         e.stopPropagation();
+    }
+
+    onTouchStart(e) {
+        let img = this.getCurrentImage();
+        if (this.modal.style.display != 'block') {
+            return;
+        }
+        // If the touch is on a button or its child, do not interfere
+        if (e.target.closest('.current-image-buttons button')) {
+            return; // Allow button touch events to propagate naturally
+        }
+
+        if (e.touches.length === 2 && e.target === img) {
+            this.initialDistance = this.getDistance(e.touches[0], e.touches[1]);
+            this.initialScale = this.currentScale;
+        } else if (e.touches.length === 1 && e.target === img) {
+            this.startDrag(e.touches[0].clientX, e.touches[0].clientY);
+            e.preventDefault();
+            e.stopPropagation();
+        }
+    }
+
+    startDrag(clientX, clientY) {
+        this.lastMouseX = clientX;
+        this.lastMouseY = clientY;
+        this.isDragging = true;
+        this.getImg().style.cursor = 'grabbing';
     }
 
     onGlobalMouseUp(e) {
@@ -282,10 +666,77 @@ class ImageFullViewHelper {
         let img = this.getImg();
         let newLeft = this.getImgLeft() + xDiff;
         let newTop = this.getImgTop() + yDiff;
-        let overWidth = img.parentElement.offsetWidth / 2;
-        let overHeight = img.parentElement.offsetHeight / 2;
-        newLeft = Math.min(overWidth, Math.max(newLeft, img.parentElement.offsetWidth - img.width - overWidth));
-        newTop = Math.min(overHeight, Math.max(newTop, img.parentElement.offsetHeight - img.height - overHeight));
+
+        if (isLikelyMobile()) {
+            let wrap = img.parentElement;
+            let imgRect = img.getBoundingClientRect();
+            let wrapRect = wrap.getBoundingClientRect();
+
+            // Calculate how much the image overflows the wrapper
+            let horizontalOverflow = Math.max(0, imgRect.width - wrapRect.width);
+            let verticalOverflow = Math.max(0, imgRect.height - wrapRect.height);
+
+            // Get current left and top positions (relative to wrapper)
+            let currentLeft = this.getImgLeft();
+            let currentTop = this.getImgTop();
+
+            // Update new positions based on movement input (xDiff, yDiff)
+            let newLeft = currentLeft + xDiff;
+            let newTop = currentTop + yDiff;
+
+            // Clamp horizontal movement
+            if (imgRect.width > wrapRect.width) {
+                if (xDiff < 0) { // Moving left
+                    newLeft = Math.max(newLeft, -horizontalOverflow / 2);
+                } else { // Moving right
+                    newLeft = Math.min(newLeft, horizontalOverflow / 2);
+                }
+            } else {
+                newLeft = 0; // Center if image is smaller
+            }
+
+            // Clamp vertical movement
+            if (imgRect.height > wrapRect.height) {
+                if (yDiff < 0) { // Moving up
+                    newTop = Math.max(newTop, -verticalOverflow / 2);
+                } else { // Moving down
+                    newTop = Math.min(newTop, verticalOverflow / 2);
+                }
+            } else {
+                newTop = 0; // Center if image is smaller
+            }
+        } else {
+            let overWidth = img.parentElement.offsetWidth / 2;
+            let overHeight = img.parentElement.offsetHeight / 2;
+            newLeft = Math.min(overWidth, Math.max(newLeft, img.parentElement.offsetWidth - img.width - overWidth));
+            newTop = Math.min(overHeight, Math.max(newTop, img.parentElement.offsetHeight - img.height - overHeight));
+        }
+        img.style.left = `${newLeft}px`;
+        img.style.top = `${newTop}px`;
+    }
+
+    updateImagePosition() {
+        let img = this.getImg();
+        let wrap = img.parentElement;
+        let imgRect = img.getBoundingClientRect();
+        let wrapRect = wrap.getBoundingClientRect();
+
+        let newLeft, newTop;
+
+        // Ensure at least one horizontal edge touches
+        if (imgRect.width > wrapRect.width) {
+            newLeft = Math.min(0, Math.max(wrapRect.width - imgRect.width, this.getImgLeft()));
+        } else {
+            newLeft = (wrapRect.width - imgRect.width) / 2; // Center horizontally
+        }
+
+        // Ensure at least one vertical edge touches
+        if (imgRect.height > wrapRect.height) {
+            newTop = Math.min(0, Math.max(wrapRect.height - imgRect.height, this.getImgTop()));
+        } else {
+            newTop = (wrapRect.height - imgRect.height) / 2; // Center vertically
+        }
+
         img.style.left = `${newLeft}px`;
         img.style.top = `${newTop}px`;
     }
@@ -295,10 +746,20 @@ class ImageFullViewHelper {
             return;
         }
         this.detachImg();
-        let xDiff = e.clientX - this.lastMouseX;
-        let yDiff = e.clientY - this.lastMouseY;
-        this.lastMouseX = e.clientX;
-        this.lastMouseY = e.clientY;
+        let clientX, clientY;
+        if (e.touches) {
+            // Touch event
+            clientX = e.touches[0].clientX;
+            clientY = e.touches[0].clientY;
+        } else {
+            // Mouse event
+            clientX = e.clientX;
+            clientY = e.clientY;
+        }
+        let xDiff = clientX - this.lastMouseX;
+        let yDiff = clientY - this.lastMouseY;
+        this.lastMouseX = clientX;
+        this.lastMouseY = clientY;
         this.moveImg(xDiff, yDiff);
         if (Math.abs(xDiff) > 1 || Math.abs(yDiff) > 1) {
             this.didDrag = true;
@@ -373,24 +834,76 @@ class ImageFullViewHelper {
         img.style.height = `${newHeight}%`;
     }
 
+    onTouchMove(e) {
+        let img = this.getCurrentImage();
+        if (e.touches.length === 2 && e.target === img) {
+            e.preventDefault();
+            const currentDistance = this.getDistance(e.touches[0], e.touches[1]);
+            const scale = currentDistance / this.initialDistance;
+            this.currentScale = Math.min(Math.max(this.initialScale * scale, 1), 4);
+            this.setScale(this.currentScale);
+            this.updateImagePosition();
+        } else if (e.touches.length === 1 && e.target === img) {
+            this.onGlobalMouseMove(e);
+        }
+    }
+
+    onTouchEnd(e) {
+        let img = this.getCurrentImage();
+        if (e.touches.length === 0 && e.target === img) {
+            this.onGlobalMouseUp(e);
+        }
+    }
+
+    getDistance(touch1, touch2) {
+        return Math.hypot(touch1.pageX - touch2.pageX, touch1.pageY - touch2.pageY);
+    }
+
+    setScale(scale) {
+        const img = this.getImg();
+        img.style.transform = `scale(${scale})`;
+    }
+
     showImage(src, metadata) {
         this.content.innerHTML = `
         <div class="modal-dialog" style="display:none">(click outside image to close)</div>
         <div class="imageview_modal_inner_div">
             <div class="imageview_modal_imagewrap" id="imageview_modal_imagewrap" style="text-align:center;">
-                <img class="imageview_popup_modal_img" id="imageview_popup_modal_img" style="cursor:grab;max-width:100%;object-fit:contain;" src="${src}">
+                <img class="imageview_popup_modal_img" id="imageview_popup_modal_img" style="cursor:grab;max-width:100%;object-fit:contain;" src="${window.location.origin}/${src}">
             </div>
             <div class="imageview_popup_modal_undertext">
             ${formatMetadata(metadata)}
             </div>
         </div>`;
         this.modalJq.modal('show');
+        if (isLikelyMobile()) {
+            // document.body.style.overflow = 'hidden'; // Prevent body scrolling
+
+            const img = this.getImg();
+            img.style.position = 'relative';
+            img.style.left = '0px';
+            img.style.top = '0px';
+            img.style.cursor = 'grab';
+
+            this.currentScale = 1;
+            this.setScale(1);
+        }
     }
 
     close() {
         this.isDragging = false;
         this.didDrag = false;
         this.modalJq.modal('hide');
+        if (isLikelyMobile()) {
+            document.body.style.overflow = '';
+            this.currentScale = 1;
+            const img = this.getImg();
+            if (img) {
+                img.style.transform = '';
+                img.style.left = '0px';
+                img.style.top = '0px';
+            }
+        }
     }
 
     isOpen() {
@@ -399,6 +912,27 @@ class ImageFullViewHelper {
 }
 
 let imageFullView = new ImageFullViewHelper();
+
+// New Mobile Viewer
+let mobileImageFullView = null;
+
+// Initialize viewers based on device type
+function initializeViewers() {
+    if (isLikelyMobile()) {
+        mobileImageFullView = new MobileImageFullViewHelper();
+    }
+}
+
+initializeViewers();
+
+/** Unified function to display full-screen images based on device type */
+function showFullImage(src, metadata) {
+    if (isLikelyMobile() && mobileImageFullView) {
+        mobileImageFullView.showImage(src, metadata);
+    } else {
+        imageFullView.showImage(src, metadata);
+    }
+}
 
 function shiftToNextImagePreview(next = true, expand = false) {
     let curImgElem = document.getElementById('current_image_img');
@@ -423,8 +957,10 @@ function shiftToNextImagePreview(next = true, expand = false) {
         divs[newIndex].querySelector('img').click();
         if (expand) {
             divs[newIndex].querySelector('img').click();
-            imageFullView.showImage(currentImgSrc, currentMetadataVal);
-            imageFullView.pasteState(expandedState);
+            showFullImage(currentImgSrc, currentMetadataVal);
+            if (!isLikelyMobile()) {
+                imageFullView.pasteState(expandedState);
+            }
         }
         return;
     }
@@ -447,14 +983,16 @@ function shiftToNextImagePreview(next = true, expand = false) {
     let block = findParentOfClass(newImg, 'image-block');
     setCurrentImage(block.dataset.src, block.dataset.metadata, block.dataset.batch_id, newImg.dataset.previewGrow == 'true');
     if (expand) {
-        imageFullView.showImage(block.dataset.src, block.dataset.metadata);
-        imageFullView.pasteState(expandedState);
+        showFullImage(block.dataset.src, block.dataset.metadata);
+        if (!isLikelyMobile()) {
+            imageFullView.pasteState(expandedState);
+        }
     }
 }
 
 window.addEventListener('keydown', function(kbevent) {
     let isFullView = imageFullView.isOpen();
-    let isCurImgFocused = document.activeElement && 
+    let isCurImgFocused = document.activeElement &&
         (findParentOfClass(document.activeElement, 'current_image')
         || findParentOfClass(document.activeElement, 'current_image_batch')
         || document.activeElement.tagName == 'BODY');
@@ -609,7 +1147,24 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
     img.id = 'current_image_img';
     img.dataset.src = src;
     img.dataset.batch_id = batchId;
-    img.onclick = () => imageFullView.showImage(src, metadata);
+    img.addEventListener('click', (event) => {
+        event.preventDefault();
+        showFullImage(src, metadata);
+    });
+
+    img.addEventListener('touchend', (event) => {
+        event.preventDefault();
+        showFullImage(src, metadata);
+    });
+
+    img.addEventListener('touchmove', (event) => {
+        img.dataset.moved = true;
+    });
+
+    img.addEventListener('touchstart', (event) => {
+        img.dataset.moved = false;
+    });
+
     let extrasWrapper = isReuse ? document.getElementById('current-image-extras-wrapper') : createDiv('current-image-extras-wrapper', 'current-image-extras-wrapper');
     extrasWrapper.innerHTML = '';
     let buttons = createDiv(null, 'current-image-buttons');
@@ -663,7 +1218,7 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
                 canvas.toBlob(blob => {
                     let type = img.src.substring(img.src.lastIndexOf('.') + 1);
                     let file = new File([blob], imagePathClean, { type: `image/${type.length > 0 && type.length < 20 ? type : 'png'}` });
-                    let container = new DataTransfer(); 
+                    let container = new DataTransfer();
                     container.items.add(file);
                     initImageParam.files = container.files;
                     triggerChangeFor(initImageParam);
@@ -749,6 +1304,51 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
         curImg.appendChild(img);
         curImg.appendChild(extrasWrapper);
     }
+    if (isLikelyMobile()) {
+        setupMobileCurrentImageExtras();
+
+        img.style.maxWidth = '100%';
+        img.style.height = 'auto';
+        extrasWrapper.style.width = '100%';
+
+        // Enable pinch-to-zoom for the image
+        img.style.touchAction = 'pinch-zoom';
+
+        // Add event listeners for pinch-to-zoom
+        let currentScale = 1;
+        let startDistance = 0;
+
+        img.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 2) {
+                startDistance = Math.hypot(
+                    e.touches[0].pageX - e.touches[1].pageX,
+                    e.touches[0].pageY - e.touches[1].pageY
+                );
+            }
+        });
+
+        img.addEventListener('touchmove', (e) => {
+            if (e.touches.length === 2) {
+                e.preventDefault(); // Prevent default only for two-finger gestures
+                const currentDistance = Math.hypot(
+                    e.touches[0].pageX - e.touches[1].pageX,
+                    e.touches[0].pageY - e.touches[1].pageY
+                );
+                const scale = currentDistance / startDistance;
+                currentScale *= scale;
+                currentScale = Math.min(Math.max(1, currentScale), 4); // Limit zoom between 1x and 4x
+                img.style.transform = `scale(${currentScale})`;
+                startDistance = currentDistance;
+            }
+        });
+
+        img.addEventListener('touchend', () => {
+            if (currentScale === 1) {
+                img.style.transform = '';
+            }
+        });
+
+    }
 }
 
 function appendImage(container, imageSrc, batchId, textPreview, metadata = '', type = 'legacy', prepend = true) {
@@ -793,7 +1393,7 @@ function gotImageResult(image, metadata, batchId) {
     if (!document.getElementById('current_image_img') || autoLoadImagesElem.checked) {
         setCurrentImage(src, metadata, batchId, false, true);
         if (getUserSetting('AutoSwapImagesIncludesFullView') && imageFullView.isOpen()) {
-            imageFullView.showImage(src, metadata);
+            showFullImage(src, metadata);
         }
     }
     return batch_div;
@@ -834,7 +1434,10 @@ function updateCurrentStatusDirect(data) {
     if (oldInterruptButton) {
         oldInterruptButton.classList.toggle('interrupt-button-none', total == 0);
     }
-    let elem = getRequiredElementById('num_jobs_span');
+    let elems = [
+        getRequiredElementById('num_jobs_span'),
+        document.getElementById('num_jobs_span_mobile')
+    ].filter(Boolean);
     function autoBlock(num, text) {
         if (num == 0) {
             return '';
@@ -847,7 +1450,10 @@ function updateCurrentStatusDirect(data) {
         let estTime = avgGenTime * total;
         timeEstimate = ` (est. ${durationStringify(estTime)})`;
     }
-    elem.innerHTML = total == 0 ? (isGeneratingPreviews ? translatableText.get() : '') : `${autoBlock(num_current_gens, 'current generation%')}${autoBlock(num_live_gens, 'running')}${autoBlock(num_backends_waiting, 'queued')}${autoBlock(num_models_loading, waitingOnModelLoadText.get())} ${timeEstimate}...`;
+    let content = total == 0 ? (isGeneratingPreviews ? translatableText.get() : '') : `${autoBlock(num_current_gens, 'current generation%')}${autoBlock(num_live_gens, 'running')}${autoBlock(num_backends_waiting, 'queued')}${autoBlock(num_models_loading, waitingOnModelLoadText.get())} ${timeEstimate}...`;
+    elems.forEach(elem => {
+        if (elem) elem.innerHTML = content;
+    });
     let max = Math.max(num_current_gens, num_models_loading, num_live_gens, num_backends_waiting);
     document.title = total == 0 ? originalPageTitle : `(${max} ${generatingText.get()}) ${originalPageTitle}`;
 }
@@ -1043,7 +1649,7 @@ function listImageHistoryFolderAndFiles(path, isRefresh, callback, depth) {
         sortBy = sortElem.value;
         reverse = sortReverseElem.checked;
     }
-    else { // first call happens before headers are added built atm
+    else if (!isLikelyMobile()) { // first call happens before headers are added built atm
         fix = () => {
             let sortElem = document.getElementById('image_history_sort_by');
             let sortReverseElem = document.getElementById('image_history_sort_reverse');
@@ -1306,6 +1912,7 @@ let toolContainer = getRequiredElementById('tool_container');
 
 function genToolsList() {
     let altGenerateButton = getRequiredElementById('alt_generate_button');
+    let altGenerateButtonMobile = document.getElementById('alt_generate_button_mobile');
     let oldGenerateButton = document.getElementById('generate_button');
     let altGenerateButtonRawText = altGenerateButton.innerText;
     let altGenerateButtonRawOnClick = altGenerateButton.onclick;
@@ -1332,6 +1939,9 @@ function genToolsList() {
             altGenerateButton.onclick = override.run;
             if (oldGenerateButton) {
                 oldGenerateButton.innerText = override.text;
+            }
+            if (altGenerateButtonMobile && isVisible(altGenerateButtonMobile)) {
+                altGenerateButtonMobile.onclick = override.run;
             }
         }
     });
@@ -1420,6 +2030,13 @@ function pageSizer() {
     let midDrag = false;
     let imageEditorSizeBarDrag = false;
     let isSmallWindow = window.innerWidth < 768 || window.innerHeight < 768;
+    if(isLikelyMobile()) {
+        topSplit.style.display = "none";
+        topSplit2.style.display = "none";
+        topSplitButton.style.display = "none";
+        midSplit.style.display = "none";
+        midSplitButton.style.display = "none";
+    }
     function setPageBars() {
         tweakNegativePromptBox();
         if (altRegion.style.display != 'none') {
@@ -1446,9 +2063,9 @@ function pageSizer() {
         inputSidebar.style.width = `${barTopLeft}`;
         mainInputsAreaWrapper.classList[pageBarTop < 350 ? "add" : "remove"]("main_inputs_small");
         mainInputsAreaWrapper.style.width = `${barTopLeft}`;
-        inputSidebar.style.display = leftShut ? 'none' : '';
+        if (!isLikelyMobile()) inputSidebar.style.display = leftShut ? 'none' : '';
         altRegion.style.width = `calc(100vw - ${barTopLeft} - ${barTopRight} - 10px)`;
-        mainImageArea.style.width = `calc(100vw - ${barTopLeft})`;
+        if(!isLikelyMobile()) mainImageArea.style.width = `calc(100vw - ${barTopLeft})`;
         mainImageArea.scrollTop = 0;
         if (imageEditor.active) {
             let imageEditorSizePercent = imageEditorSizeBarVal < 0 ? 0.5 : (imageEditorSizeBarVal / 100.0);
@@ -1472,7 +2089,7 @@ function pageSizer() {
             let fixed = midForceToBottom ? `6.5rem` : `${pageBarMid}px`;
             topSplit.style.height = `calc(100vh - ${fixed})`;
             topSplit2.style.height = `calc(100vh - ${fixed})`;
-            inputSidebar.style.height = `calc(100vh - ${fixed})`;
+            if (!isLikelyMobile()) inputSidebar.style.height = `calc(100vh - ${fixed})`;
             mainInputsAreaWrapper.style.height = `calc(100vh - ${fixed})`;
             mainImageArea.style.height = `calc(100vh - ${fixed})`;
             currentImage.style.height = `calc(100vh - ${fixed} - ${altHeight})`;
@@ -1633,7 +2250,7 @@ function pageSizer() {
         });
     }
     altText.addEventListener('keydown', (e) => {
-        if (e.key == 'Enter' && !e.shiftKey) {
+        if (e.key == 'Enter' && (e.metaKey || e.ctrlKey)) {
             altText.dispatchEvent(new Event('change'));
             getRequiredElementById('alt_generate_button').click();
             e.preventDefault();
@@ -2270,6 +2887,16 @@ function storeImageToHistoryWithCurrentParams(img) {
     });
 }
 
+$('#toptablist').on('shown.bs.tab', function (e) {
+    let versionDisp = getRequiredElementById('version_display');
+    if (e.target.id == 'maintab_comfyworkflow') {
+        versionDisp.style.display = 'none';
+    }
+    else {
+        versionDisp.style.display = '';
+    }
+});
+
 function genpageLoad() {
     console.log('Load page...');
     $('#toptablist').on('shown.bs.tab', function (e) {
@@ -2359,5 +2986,11 @@ function genpageLoad() {
         window.resLoopInterval = setInterval(serverResourceLoop, 1000);
     });
 }
+
+window.addEventListener('resize', () => {
+    if (mobileImageFullView?.modal?.style?.display === 'flex') {
+        mobileImageFullView.resizeCanvas();
+    }
+});
 
 setTimeout(genpageLoad, 1);

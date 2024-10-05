@@ -244,6 +244,32 @@ public class T2IParamInput
 
     static T2IParamInput()
     {
+        PromptTagProcessors["setvar"] = (data, context) =>
+        {
+            string name = context.PreData;
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                Logs.Warning($"A variable name is required when using setvar.");
+                return null;
+            }
+            data = context.Parse(data);
+            context.Variables[name] = data;
+            return data;
+        };
+        PromptTagLengthEstimators["setvar"] = (data) =>
+        {
+            return ProcessPromptLikeForLength(data);
+        };
+        PromptTagProcessors["var"] = (data, context) =>
+        {
+            if (!context.Variables.TryGetValue(data, out string val))
+            {
+                Logs.Warning($"Variable '{data}' is not recognized.");
+                return "";
+            }
+            return val;
+        };
+        PromptTagLengthEstimators["var"] = estimateEmpty;
         PromptTagProcessors["random"] = (data, context) =>
         {
             (int count, string partSeparator) = InterpretPredataForRandom("random", context.PreData, data);
@@ -392,6 +418,7 @@ public class T2IParamInput
         PromptTagLengthEstimators["wc"] = PromptTagLengthEstimators["wildcard"];
         PromptTagProcessors["repeat"] = (data, context) =>
         {
+            data = context.Parse(data);
             (string count, string value) = data.BeforeAndAfter(',');
             double? countVal = InterpretNumber(count);
             if (!countVal.HasValue)
@@ -1080,7 +1107,7 @@ public class T2IParamInput
             RequiredFlags.Add(param.Type.FeatureFlag);
         }
     }
-    
+
     /// <summary>Removes a param.</summary>
     public void Remove<T>(T2IRegisteredParam<T> param)
     {

@@ -91,7 +91,7 @@ public enum ParamViewType
 /// <param name="Subtype">The sub-type of the type - for models, this might be eg "Stable-Diffusion".</param>
 /// <param name="ID">The raw ID of this parameter (will be set when registering).</param>
 /// <param name="SharpType">The C# datatype.</param>
-/// 
+///
 public record class T2IParamType(string Name, string Description, string Default, double Min = 0, double Max = 0, double Step = 1, double ViewMin = 0, double ViewMax = 0,
     Func<string, string, string> Clean = null, Func<Session, List<string>> GetValues = null, string[] Examples = null, Func<List<string>, List<string>> ParseList = null, bool ValidateValues = true,
     bool VisibleNormally = true, bool IsAdvanced = false, string FeatureFlag = null, string Permission = null, bool Toggleable = false, double OrderPriority = 10, T2IParamGroup Group = null, string IgnoreIf = null,
@@ -280,7 +280,7 @@ public class T2IParamTypes
     }
 
     public static T2IRegisteredParam<string> Prompt, NegativePrompt, EditPrompt, AspectRatio, BackendType, RefinerMethod, FreeUApplyTo, FreeUVersion, PersonalNote, VideoFormat, VideoResolution, UnsamplerPrompt, ImageFormat, MaskBehavior, RawResolution, SeamlessTileable, SD3TextEncs, BitDepth, Webhooks;
-    public static T2IRegisteredParam<int> Images, Steps, Width, Height, BatchSize, ExactBackendID, VAETileSize, ClipStopAtLayer, VideoFrames, VideoMotionBucket, VideoFPS, VideoSteps, RefinerSteps, CascadeLatentCompression, MaskShrinkGrow, MaskBlur, MaskGrow, SegmentMaskBlur, SegmentMaskGrow;
+    public static T2IRegisteredParam<int> Images, Steps, Width, Height, BatchSize, ExactBackendID, VAETileSize, ClipStopAtLayer, VideoFrames, VideoMotionBucket, VideoFPS, VideoSteps, RefinerSteps, RefinerCount, CascadeLatentCompression, MaskShrinkGrow, MaskBlur, MaskGrow, SegmentMaskBlur, SegmentMaskGrow;
     public static T2IRegisteredParam<long> Seed, VariationSeed, WildcardSeed;
     public static T2IRegisteredParam<double> CFGScale, VariationSeedStrength, InitImageCreativity, InitImageResetToNorm, RefinerControl, RefinerUpscale, RefinerCFGScale, ReVisionStrength, AltResolutionHeightMult,
         FreeUBlock1, FreeUBlock2, FreeUSkip1, FreeUSkip2, GlobalRegionFactor, EndStepsEarly, SamplerSigmaMin, SamplerSigmaMax, SamplerRho, VideoAugmentationLevel, VideoCFG, VideoMinCFG, IP2PCFG2, RegionalObjectCleanupFactor, SigmaShift, SegmentThresholdMax, FluxGuidanceScale;
@@ -314,15 +314,18 @@ public class T2IParamTypes
     /// <summary>(Called by <see cref="Program"/> during startup) registers all default parameter types.</summary>
     public static void RegisterDefaults()
     {
+        Model = Register<T2IModel>(new("Model", "What main checkpoint model should be used.",
+            "", Permission: "param_model", VisibleNormally: true, Subtype: "Stable-Diffusion", ChangeWeight: -5, OrderPriority: -100, ViewType: ParamViewType.NORMAL
+            ));
         Prompt = Register<string>(new("Prompt", "The input prompt text that describes the image you want to generate.\nTell the AI what you want to see.",
-            "", Clean: ApplyStringEdit, Examples: ["a photo of a cat", "a cartoonish drawing of an astronaut"], OrderPriority: -100, VisibleNormally: false, ViewType: ParamViewType.PROMPT, ChangeWeight: -5
+            "", Clean: ApplyStringEdit, Examples: ["a photo of a cat", "a cartoonish drawing of an astronaut"], OrderPriority: -95, VisibleNormally: false, ViewType: ParamViewType.PROMPT, ChangeWeight: -5
             ));
         PromptImages = Register<List<Image>>(new("Prompt Images", "Images to include with the prompt, for eg ReVision or UnCLIP.\nIf this parameter is visible, you've done something wrong - this parameter is tracked internally.",
-            "", IgnoreIf: "", OrderPriority: -95, Toggleable: true, VisibleNormally: false, IsAdvanced: true, ImageShouldResize: false, ChangeWeight: 2, HideFromMetadata: true // Has special internal handling
+            "", IgnoreIf: "", OrderPriority: -90, Toggleable: true, VisibleNormally: false, IsAdvanced: true, ImageShouldResize: false, ChangeWeight: 2, HideFromMetadata: true // Has special internal handling
             ));
         GroupAdvancedModelAddons = new("Advanced Model Addons", Open: false, IsAdvanced: true);
         NegativePrompt = Register<string>(new("Negative Prompt", "Like the input prompt text, but describe what NOT to generate.\nTell the AI things you don't want to see.",
-            "", IgnoreIf: "", Clean: ApplyStringEdit, Examples: ["ugly, bad, gross", "lowres, low quality"], OrderPriority: -90, ViewType: ParamViewType.PROMPT, ChangeWeight: -5, VisibleNormally: false
+            "", IgnoreIf: "", Clean: ApplyStringEdit, Examples: ["ugly, bad, gross", "lowres, low quality"], OrderPriority: -85, ViewType: ParamViewType.PROMPT, ChangeWeight: -5, VisibleNormally: false
             ));
         GroupRevision = new("ReVision", Open: false, Toggles: true, OrderPriority: -70, Description: $"Image prompting with ReVision, IP-Adapter, etc.\n<a target=\"_blank\" href=\"{Utilities.RepoDocsRoot}/Features/IPAdapter-ReVision.md\">See more docs here.</a>");
         ReVisionStrength = Register<double>(new("ReVision Strength", $"How strong to apply ReVision image inputs.\nSet to 0 to disable ReVision processing.",
@@ -359,8 +362,8 @@ public class T2IParamTypes
             "0", IgnoreIf: "0", Min: 0, Max: 1, Step: 0.05, Examples: ["0", "0.25", "0.5", "0.75"], OrderPriority: -17, ViewType: ParamViewType.SLIDER, Group: GroupVariation, FeatureFlag: "variation_seed", ChangeWeight: -4
             ));
         GroupResolution = new("Resolution", Toggles: false, Open: false, OrderPriority: -11);
-        AspectRatio = Register<string>(new("Aspect Ratio", "Image aspect ratio - that is, the shape of the image (wide vs square vs tall).\nSet to 'Custom' to define a manual width/height instead.\nSome models can stretch better than others.\nNotably Flux models support almost any resolution you feel like trying.",
-            "1:1", GetValues: (_) => ["1:1///1:1 (Square)", "4:3///4:3 (Old PC)", "3:2///3:2 (Semi-wide)", "8:5///8:5", "16:9///16:9 (Standard Widescreen)", "21:9///21:9 (Ultra-Widescreen)", "3:4///3:4", "2:3///2:3 (Semi-tall)", "5:8///5:8", "9:16///9:16 (Tall)", "9:21///9:21 (Ultra-Tall)", "Custom"], OrderPriority: -11, Group: GroupResolution
+        AspectRatio = Register<string>(new("Aspect Ratio", "Image aspect ratio. Some models can stretch better than others.",
+            "1:1", GetValues: (_) => ["1:1///1:1 (Square)", "4:3///4:3 (Landscape Photograph)", "3:2///3:2 (Semi-wide)", "8:5///8:5", "16:9///16:9 (Standard Widescreen)", "21:9///21:9 (Ultra-Widescreen)", "3:4///3:4 (Portrait Photograph)", "2:3///2:3 (Semi-tall)", "5:8///5:8", "9:16///9:16 (Tall)", "9:21///9:21 (Ultra-Tall)", "Custom"], OrderPriority: -11, Group: GroupResolution
             ));
         Width = Register<int>(new("Width", "Image width, in pixels.\nSDv1 uses 512, SDv2 uses 768, SDXL prefers 1024.\nSome models allow variation within a range (eg 512 to 768) but almost always want a multiple of 64.\nFlux is very open to differing values.",
             "512", Min: 64, ViewMin: 256, Max: 16384, ViewMax: 2048, Step: 32, Examples: ["512", "768", "1024"], OrderPriority: -10, ViewType: ParamViewType.POT_SLIDER, Group: GroupResolution
@@ -451,6 +454,9 @@ public class T2IParamTypes
         RefinerDoTiling = Register<bool>(new("Refiner Do Tiling", "If enabled, do generation tiling in the refiner stage.\nThis can fix some visual artifacts from scaling, but also introduce others (eg seams).\nThis may take a while to run.\nRecommended for SD3 if upscaling.",
             "false", IgnoreIf: "false", OrderPriority: 5, Group: GroupRefiners, FeatureFlag: "refiners", DoNotPreview: true
             ));
+        RefinerCount = Register<int>(new("Refiner Count", "The number of refiner stages to use.\nRefiners are a post-processing stage that can upscale the image while applying controlnets and other effects.\nThis is useful when using SDv1 models as the refiner. SDXL-Base models do not benefit as much.",
+            "1", Min: 1, Max: 4, Step: 1, Toggleable: true, IsAdvanced: true, FeatureFlag: "comfyui", ViewType: ParamViewType.SLIDER, Group: GroupRefiners, OrderPriority: 21
+            ));
         static List<string> listVaes(Session s)
         {
             return ["None", .. Program.T2IModelSets["VAE"].ListModelsFor(s).Select(m => CleanModelName(m.Name))];
@@ -517,9 +523,6 @@ public class T2IParamTypes
             ));
         VideoFormat = Register<string>(new("Video Format", "What format to save videos in.",
             "webp", GetValues: _ => ["webp", "gif", "webm", "h264-mp4", "prores"], OrderPriority: 20, Group: GroupVideo, FeatureFlag: "video", DoNotPreview: true
-            ));
-        Model = Register<T2IModel>(new("Model", "What main checkpoint model should be used.",
-            "", Permission: "param_model", VisibleNormally: false, Subtype: "Stable-Diffusion", ChangeWeight: 10
             ));
         VAE = Register<T2IModel>(new("VAE", "The VAE (Variational Auto-Encoder) controls the translation between images and latent space.\nIf your images look faded out, or glitched, you may have the wrong VAE.\nAll models have a VAE baked in by default, this option lets you swap to a different one if you want to.",
             "None", IgnoreIf: "None", Permission: "param_model", IsAdvanced: true, Toggleable: true, GetValues: listVaes, Subtype: "VAE", Group: GroupAdvancedModelAddons, ChangeWeight: 7

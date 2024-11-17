@@ -104,6 +104,10 @@ class GenPageBrowserClass {
         this.initialLoadDone = false;
         this.isNavigating = false;
         this.currentSortMethod = "name";
+        this.headerPath = null;
+        this.headerCount = null;
+        this.contentDiv = null;
+        this.hasGenerated = false;
     }
 
     /**
@@ -123,30 +127,27 @@ class GenPageBrowserClass {
         this.updatePendingSince = new Date().getTime();
         if (isRefresh) {
             this.tree = new BrowserTreePart("", {}, false, null, null, "");
-            this.contentDiv.scrollTop = 0;
+            if (this.contentDiv) {
+                this.contentDiv.scrollTop = 0;
+            }
         }
-        this.listFoldersAndFiles(
-            this.folder,
-            isRefresh,
-            (folders, files) => {
-                this.allItems = files;
-                if (this.allItems.length === 0 && folders.length > 0) {
-                    this.fetchFilesFromSubfolders(folders, 0);
-                } else {
-                    this.centralizePaginationAndFiltering();
-                    this.build(this.folder, folders, this.filteredItems);
-                    this.updatePendingSince = null;
-                    if (callback) {
-                        setTimeout(() => callback(), 100);
-                    }
-                    if (this.wantsReupdate) {
-                        this.wantsReupdate = false;
-                        this.update();
-                    }
+        this.listFoldersAndFiles(this.folder, isRefresh, (folders, files) => {
+            this.allItems = files || [];
+            if (this.allItems.length === 0 && folders && folders.length > 0) {
+                this.fetchFilesFromSubfolders(folders, 0);
+            } else {
+                this.centralizePaginationAndFiltering();
+                this.build(this.folder, folders, this.filteredItems);
+                this.updatePendingSince = null;
+                if (callback) {
+                    setTimeout(() => callback(), 100);
                 }
-            },
-            this.depth
-        );
+                if (this.wantsReupdate) {
+                    this.wantsReupdate = false;
+                    this.update();
+                }
+            }
+        }, this.depth);
     }
 
     /**
@@ -514,39 +515,28 @@ class GenPageBrowserClass {
         this.debouncedNavigateMobile(parentPath);
     }
 
-    navigateMobile(path, callback) {
-        this.currentPage = 1;
-        this.path = path;
-        window.listFolders = this.listFoldersAndFiles.bind(this);
-        const mobileHeader = document.getElementById(`${this.id}-mobile-header`);
-        if (mobileHeader) {
-            mobileHeader.style.display = 'none';
+    navigateMobile(path) {
+        if (!path) {
+            path = '';
         }
-        this.listFoldersAndFiles(
-            path,
-            true,
-            (folders, files) => {
-                this.allItems = files;
-                this.resetFilteredItems();
-                this.centralizePaginationAndFiltering();
-                // if (
-                //     this.filteredItems.length === 0 &&
-                //     this.allItems.length > 0
-                // ) {
-                //     this.filteredItems = this.allItems;
-                // }
-
-                this.build(path, folders, this.filteredItems);
-
-                if (callback) {
-                    setTimeout(() => callback(), 100);
-                }
-                if (this.folderSelectedEvent) {
-                    this.folderSelectedEvent(path);
-                }
-            },
-            this.depth
-        );
+        
+        const safePath = path;
+        setTimeout(() => {
+            if (this.isNavigating) {
+                return;
+            }
+            this.isNavigating = true;
+            try {
+                this.folder = safePath;
+                this.selected = null;
+                this.update(false, () => {
+                    this.isNavigating = false;
+                });
+            } catch (e) {
+                console.error('Navigation failed:', e);
+                this.isNavigating = false;
+            }
+        }, 0);
     }
 
     debouncedNavigateMobile = debounce(this.navigateMobile.bind(this), 100);
@@ -926,26 +916,30 @@ class GenPageBrowserClass {
      * Make any visible images within a container actually load now.
      */
     makeVisible(elem) {
+        if (!elem) {
+            return;
+        }
+        
         for (let subElem of elem.querySelectorAll(".lazyload")) {
-            let top = subElem.getBoundingClientRect().top;
-            if (
-                // !isLikelyMobile() &&
-                top >= window.innerHeight + 512 ||
-                top == 0
-            ) {
-                // Note top=0 means not visible
+            let rect = subElem.getBoundingClientRect();
+            if (!rect || rect.top >= window.innerHeight + 512 || rect.top === 0) {
                 continue;
             }
+            
             subElem.classList.remove("lazyload");
-            if (subElem.tagName == "IMG") {
+            if (subElem.tagName === "IMG") {
                 if (!subElem.dataset.src) {
                     continue;
                 }
                 subElem.src = subElem.dataset.src;
                 delete subElem.dataset.src;
             } else if (subElem.classList.contains("browser-section-loader")) {
-                subElem.click();
-                subElem.remove();
+                try {
+                    subElem.click();
+                    subElem.remove();
+                } catch (e) {
+                    console.warn('Error removing browser section loader:', e);
+                }
             }
         }
     }
@@ -1072,27 +1066,21 @@ class GenPageBrowserClass {
      * Returns the file object for a given path.
      */
     getFileFor(path) {
-        return this.lastFiles.find(f => f.name == path);
-    }
-
-    /**
-     * Returns the visible element block for a given file name.
-     */
-    getVisibleEntry(name) {
-        for (let child of this.contentDiv.children) {
-            if (child.dataset.name == name) {
-                return child;
-            }
+        if (!this.lastFiles) {
+            return null;
         }
-        return null;
+        return this.lastFiles.find(f => f.name === path);
     }
 
     /**
      * Returns the visible element block for a given file name.
      */
     getVisibleEntry(name) {
+        if (!this.contentDiv || !name) {
+            return null;
+        }
         for (let child of this.contentDiv.children) {
-            if (child.dataset.name == name) {
+            if (child.dataset.name === name) {
                 return child;
             }
         }
@@ -1103,6 +1091,24 @@ class GenPageBrowserClass {
      * Central call to build the browser content area.
      */
     build(path, folders, files) {
+        this.lastPath = path || '';
+        this.lastFiles = files || [];
+        
+        if (this.contentDiv) {
+            while (this.contentDiv.firstChild) {
+                this.contentDiv.firstChild.remove();
+            }
+        }
+
+        if (this.hasGenerated) {
+            if (this.headerPath && this.headerPath.parentNode) {
+                this.headerPath.remove();
+            }
+            if (this.headerCount && this.headerCount.parentNode) {
+                this.headerCount.remove();
+            }
+        }
+
         if (path !== "" && !path && this.lastPath) {
             path = this.lastPath;
         }
@@ -1328,10 +1334,19 @@ class GenPageBrowserClass {
             this.folderTreeDiv.innerHTML = "";
             this.contentDiv.innerHTML = "";
             this.headerPath.remove();
-            this.headerCount.remove();
+            if (this.headerCount) {
+                this.headerCount.remove();
+            }
         }
         this.headerPath = this.genPath(path, this.upButton);
-        if (!isLikelyMobile()) this.headerBar.appendChild(this.headerPath);
+        if (!isLikelyMobile() && this.headerBar) {
+            this.headerBar.appendChild(this.headerPath);
+            if (files) {
+                this.headerCount = createSpan(null, 'browser-header-count');
+                this.headerCount.innerText = files.length;
+                this.headerBar.appendChild(this.headerCount);
+            }
+        }
         if (isLikelyMobile()) {
             let mobileContainer = document.getElementById(
                 `${this.id}-mobile-foldertree`

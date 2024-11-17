@@ -2488,53 +2488,59 @@ function resetBatchIfNeeded() {
 
 function loadUserData(callback) {
     genericRequest('GetMyUserData', {}, data => {
-        permissions.updateFrom(data.permissions);
-        autoCompletionsList = {};
-        if (data.autocompletions) {
-            let allSet = [];
-            autoCompletionsList['all'] = allSet;
-            for (let val of data.autocompletions) {
-                let split = val.split('\n');
-                let datalist = autoCompletionsList[val[0]];
-                let entry = { name: split[0], low: split[1].replaceAll(' ', '_').toLowerCase(), clean: split[1], raw: val, count: 0 };
-                if (split.length > 3) {
-                    entry.tag = split[2];
-                }
-                if (split.length > 4) {
-                    count = parseInt(split[3]) || 0;
-                    if (count) {
-                        entry.count = count;
-                        entry.count_display = largeCountStringify(count);
+        if (data && data.settings) {  // Add null check
+            const settings = data.settings;
+            // Only try to split if settings exists and isn't null
+            if (settings) {
+                permissions.updateFrom(data.permissions);
+                autoCompletionsList = {};
+                if (data.autocompletions) {
+                    let allSet = [];
+                    autoCompletionsList['all'] = allSet;
+                    for (let val of data.autocompletions) {
+                        let split = val.split('\n');
+                        let datalist = autoCompletionsList[val[0]];
+                        let entry = { name: split[0], low: split[1].replaceAll(' ', '_').toLowerCase(), clean: split[1], raw: val, count: 0 };
+                        if (split.length > 3) {
+                            entry.tag = split[2];
+                        }
+                        if (split.length > 4) {
+                            count = parseInt(split[3]) || 0;
+                            if (count) {
+                                entry.count = count;
+                                entry.count_display = largeCountStringify(count);
+                            }
+                        }
+                        if (!datalist) {
+                            datalist = [];
+                            autoCompletionsList[val[0]] = datalist;
+                        }
+                        datalist.push(entry);
+                        allSet.push(entry);
                     }
                 }
-                if (!datalist) {
-                    datalist = [];
-                    autoCompletionsList[val[0]] = datalist;
+                else {
+                    autoCompletionsList = null;
                 }
-                datalist.push(entry);
-                allSet.push(entry);
+                allPresets = data.presets;
+                if (!language) {
+                    language = data.language;
+                }
+                sortPresets();
+                presetBrowser.update();
+                if (shouldApplyDefault) {
+                    shouldApplyDefault = false;
+                    let defaultPreset = getPresetByTitle('default');
+                    if (defaultPreset) {
+                        applyOnePreset(defaultPreset);
+                    }
+                }
+                if (callback) {
+                    callback();
+                }
+                loadAndApplyTranslations();
             }
         }
-        else {
-            autoCompletionsList = null;
-        }
-        allPresets = data.presets;
-        if (!language) {
-            language = data.language;
-        }
-        sortPresets();
-        presetBrowser.update();
-        if (shouldApplyDefault) {
-            shouldApplyDefault = false;
-            let defaultPreset = getPresetByTitle('default');
-            if (defaultPreset) {
-                applyOnePreset(defaultPreset);
-            }
-        }
-        if (callback) {
-            callback();
-        }
-        loadAndApplyTranslations();
     });
 }
 

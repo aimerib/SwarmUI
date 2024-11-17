@@ -321,7 +321,7 @@ public class T2IParamTypes
     public static void RegisterDefaults()
     {
         Model = Register<T2IModel>(new("Model", "What main checkpoint model should be used.",
-            "", Permission: "param_model", VisibleNormally: true, Subtype: "Stable-Diffusion", ChangeWeight: -5, OrderPriority: -100, ViewType: ParamViewType.NORMAL
+            "", Permission: Permissions.ModelParams, VisibleNormally: true, Subtype: "Stable-Diffusion", ChangeWeight: -5, OrderPriority: -100, ViewType: ParamViewType.NORMAL
             ));
         Prompt = Register<string>(new("Prompt", "The input prompt text that describes the image you want to generate.\nTell the AI what you want to see.",
             "", Clean: ApplyStringEdit, Examples: ["a photo of a cat", "a cartoonish drawing of an astronaut"], OrderPriority: -95, VisibleNormally: false, ViewType: ParamViewType.PROMPT, ChangeWeight: -5
@@ -547,9 +547,9 @@ public class T2IParamTypes
         VideoFormat = Register<string>(new("Video Format", "What format to save videos in.",
             "webp", GetValues: _ => ["webp", "gif", "webm", "h264-mp4", "prores"], OrderPriority: 20, Group: GroupVideo, Permission: Permissions.ParamVideo, FeatureFlag: "video", DoNotPreview: true
             ));
-        Model = Register<T2IModel>(new("Model", "What main checkpoint model should be used.",
-            "", Permission: Permissions.ModelParams, VisibleNormally: false, Subtype: "Stable-Diffusion", ChangeWeight: 10
-            ));
+        // Model = Register<T2IModel>(new("Model", "What main checkpoint model should be used.",
+        //     "", Permission: Permissions.ModelParams, VisibleNormally: false, Subtype: "Stable-Diffusion", ChangeWeight: 10
+        //     ));
         VAE = Register<T2IModel>(new("VAE", "The VAE (Variational Auto-Encoder) controls the translation between images and latent space.\nIf your images look faded out, or glitched, you may have the wrong VAE.\nAll models have a VAE baked in by default, this option lets you swap to a different one if you want to.",
             "None", IgnoreIf: "None", Permission: Permissions.ModelParams, IsAdvanced: true, Toggleable: true, GetValues: listVaes, Subtype: "VAE", Group: GroupAdvancedModelAddons, ChangeWeight: 7
             ));
